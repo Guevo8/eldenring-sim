@@ -143,7 +143,7 @@ def main():
     affinities = build_affinity_rules()
 
     meta = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": (datetime.now(timezone.utc).isoformat() if os.environ.get("INCLUDE_GENERATED_AT") else ""),
         "schema": "eldenring_sim_v1",
         "note": "reinforce_tables/affinity_rules are placeholders until regulation params are imported.",
     }

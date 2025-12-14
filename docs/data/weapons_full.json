@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2025-12-14T22:10:55.511352+00:00",
+    "generated_at": "",
     "schema": "eldenring_sim_v1",
     "note": "reinforce_tables/affinity_rules are placeholders until regulation params are imported."
   },
