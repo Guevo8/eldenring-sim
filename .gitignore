@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# termux / editor
+.DS_Store
+*.swp

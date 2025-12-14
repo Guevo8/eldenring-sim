@@ -1,0 +1,217 @@
+{
+  "meta": {
+    "generated_at": "2025-12-14T22:10:55.511352+00:00",
+    "schema": "eldenring_sim_v1",
+    "note": "reinforce_tables/affinity_rules are placeholders until regulation params are imported."
+  },
+  "weapons": [
+    {
+      "id": "giant_crusher",
+      "name": "Giant-Crusher",
+      "weapon_class": "Colossal Weapon",
+      "upgrade_path": "smithing",
+      "weight": 26.5,
+      "requirements": {
+        "str": 60,
+        "dex": 0,
+        "int": 0,
+        "fth": 0,
+        "arc": 0
+      },
+      "base_damage_plus0": {
+        "phys": 330,
+        "mag": 0,
+        "fire": 0,
+        "ligh": 0,
+        "holy": 0
+      },
+      "scaling_grade_display": {
+        "str": "B",
+        "dex": "E",
+        "int": "-",
+        "fth": "-",
+        "arc": "-"
+      },
+      "meta": {
+        "notes": "",
+        "source": "manual",
+        "patch_tag": "dev"
+      }
+    },
+    {
+      "id": "rivers_of_blood",
+      "name": "Rivers of Blood",
+      "weapon_class": "Katana",
+      "upgrade_path": "somber",
+      "weight": 6.5,
+      "requirements": {
+        "str": 12,
+        "dex": 18,
+        "int": 0,
+        "fth": 0,
+        "arc": 20
+      },
+      "base_damage_plus0": {
+        "phys": 186,
+        "mag": 0,
+        "fire": 186,
+        "ligh": 0,
+        "holy": 0
+      },
+      "scaling_grade_display": {
+        "str": "E",
+        "dex": "B",
+        "int": "-",
+        "fth": "-",
+        "arc": "D"
+      },
+      "meta": {
+        "notes": "",
+        "source": "manual",
+        "patch_tag": "dev"
+      }
+    },
+    {
+      "id": "moonveil",
+      "name": "Moonveil",
+      "weapon_class": "Katana",
+      "upgrade_path": "somber",
+      "weight": 6.5,
+      "requirements": {
+        "str": 12,
+        "dex": 18,
+        "int": 23,
+        "fth": 0,
+        "arc": 0
+      },
+      "base_damage_plus0": {
+        "phys": 178,
+        "mag": 213,
+        "fire": 0,
+        "ligh": 0,
+        "holy": 0
+      },
+      "scaling_grade_display": {
+        "str": "E",
+        "dex": "B",
+        "int": "B",
+        "fth": "-",
+        "arc": "-"
+      },
+      "meta": {
+        "notes": "",
+        "source": "manual",
+        "patch_tag": "dev"
+      }
+    },
+    {
+      "id": "bloodfiends_arm",
+      "name": "Bloodfiend's Arm",
+      "weapon_class": "Colossal Weapon",
+      "upgrade_path": "smithing",
+      "weight": 20.0,
+      "requirements": {
+        "str": 28,
+        "dex": 11,
+        "int": 0,
+        "fth": 0,
+        "arc": 16
+      },
+      "base_damage_plus0": {
+        "phys": 253,
+        "mag": 0,
+        "fire": 0,
+        "ligh": 0,
+        "holy": 0
+      },
+      "scaling_grade_display": {
+        "str": "C",
+        "dex": "E",
+        "int": "-",
+        "fth": "-",
+        "arc": "D"
+      },
+      "meta": {
+        "notes": "",
+        "source": "manual",
+        "patch_tag": "dev"
+      }
+    },
+    {
+      "id": "milady",
+      "name": "Milady",
+      "weapon_class": "Light Greatsword",
+      "upgrade_path": "smithing",
+      "weight": 7.5,
+      "requirements": {
+        "str": 12,
+        "dex": 17,
+        "int": 0,
+        "fth": 0,
+        "arc": 0
+      },
+      "base_damage_plus0": {
+        "phys": 234,
+        "mag": 0,
+        "fire": 0,
+        "ligh": 0,
+        "holy": 0
+      },
+      "scaling_grade_display": {
+        "str": "D",
+        "dex": "C",
+        "int": "-",
+        "fth": "-",
+        "arc": "-"
+      },
+      "meta": {
+        "notes": "",
+        "source": "manual",
+        "patch_tag": "dev"
+      }
+    }
+  ],
+  "reinforce_tables": {
+    "smithing": {
+      "0": {
+        "base_mult": 1.0,
+        "scaling_mult": 1.0
+      },
+      "25": {
+        "base_mult": 1.0,
+        "scaling_mult": 1.0
+      }
+    },
+    "somber": {
+      "0": {
+        "base_mult": 1.0,
+        "scaling_mult": 1.0
+      },
+      "10": {
+        "base_mult": 1.0,
+        "scaling_mult": 1.0
+      }
+    }
+  },
+  "affinity_rules": [
+    {
+      "affinity": "Standard",
+      "allowed_on": "all",
+      "base_mult": {
+        "phys": 1.0,
+        "mag": 1.0,
+        "fire": 1.0,
+        "ligh": 1.0,
+        "holy": 1.0
+      },
+      "scaling_mult": {
+        "str": 1.0,
+        "dex": 1.0,
+        "int": 1.0,
+        "fth": 1.0,
+        "arc": 1.0
+      },
+      "notes": "baseline"
+    }
+  ]
+}

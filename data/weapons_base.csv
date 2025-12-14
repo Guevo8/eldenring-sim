@@ -1,0 +1,6 @@
+id,name,weapon_class,upgrade_path,weight,req_str,req_dex,req_int,req_fth,req_arc,base_phys,base_mag,base_fire,base_ligh,base_holy,scaling_str_grade,scaling_dex_grade,scaling_int_grade,scaling_fth_grade,scaling_arc_grade,notes,source,patch_tag
+giant_crusher,Giant-Crusher,Colossal Weapon,smithing,26.5,60,0,0,0,0,330,0,0,0,0,B,E,-,-,-,,manual,dev
+rivers_of_blood,Rivers of Blood,Katana,somber,6.5,12,18,0,0,20,186,0,186,0,0,E,B,-,-,D,,manual,dev
+moonveil,Moonveil,Katana,somber,6.5,12,18,23,0,0,178,213,0,0,0,E,B,B,-,-,,manual,dev
+bloodfiends_arm,Bloodfiend's Arm,Colossal Weapon,smithing,20.0,28,11,0,0,16,253,0,0,0,0,C,E,-,-,D,,manual,dev
+milady,Milady,Light Greatsword,smithing,7.5,12,17,0,0,0,234,0,0,0,0,D,C,-,-,-,,manual,dev

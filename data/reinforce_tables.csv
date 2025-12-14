@@ -1,0 +1,5 @@
+upgrade_path,level,base_mult,scaling_mult
+smithing,0,1.000,1.000
+smithing,25,1.000,1.000
+somber,0,1.000,1.000
+somber,10,1.000,1.000

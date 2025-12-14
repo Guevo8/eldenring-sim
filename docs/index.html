@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Elden Ring – Weapon Simulator (v1)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 16px; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 900px){ .row{ grid-template-columns: 420px 1fr; } }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; }
+    label { display:block; font-weight: 600; margin-top: 10px; }
+    select, input { width:100%; padding: 10px; border-radius: 10px; border:1px solid #ccc; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .muted { color:#666; font-size: 0.95rem; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono"; }
+    .ok { color: #0a7a2f; font-weight: 700; }
+    .bad { color: #b00020; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Elden Ring – Weapon Simulator (v1)</h1>
+  <p class="muted">
+    Basis: vollständige Waffenanzeige + Anforderungen + Base-Damage. Upgrade/Affinity-Tabellen sind derzeit Platzhalter und werden später durch Regulation-Paramdaten ersetzt.
+  </p>
+
+  <div class="row">
+    <div class="card">
+      <h2>Auswahl</h2>
+
+      <label>Waffe</label>
+      <select id="weaponSelect"></select>
+
+      <label>Upgrade-Level</label>
+      <input id="upgradeLevel" type="number" min="0" max="25" value="0" />
+
+      <label>Affinity</label>
+      <select id="affinitySelect"></select>
+
+      <h3>Stats</h3>
+      <div class="grid2">
+        <div><label>STR</label><input id="statStr" type="number" min="1" max="99" value="10"></div>
+        <div><label>DEX</label><input id="statDex" type="number" min="1" max="99" value="10"></div>
+        <div><label>INT</label><input id="statInt" type="number" min="1" max="99" value="10"></div>
+        <div><label>FTH</label><input id="statFth" type="number" min="1" max="99" value="10"></div>
+        <div><label>ARC</label><input id="statArc" type="number" min="1" max="99" value="10"></div>
+      </div>
+
+      <label><input id="twoHand" type="checkbox"> Zwei-Hand (STR × 1.5 für Requirement-Check)</label>
+    </div>
+
+    <div class="card">
+      <h2>Details</h2>
+      <div id="details"></div>
+      <hr/>
+      <h2>AR / Damage (MVP)</h2>
+      <div id="calc"></div>
+      <p class="muted">
+        Hinweis: Die echte AR-Berechnung (Upgrades/Infusions/Scaling-Curves) kommt, sobald die Regulation-Paramdaten importiert sind.
+      </p>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
