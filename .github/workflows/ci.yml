@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Python syntax check
+        run: python -m py_compile scripts/export_sheet_to_json.py
+
+      - name: Run export (deterministic)
+        run: |
+          # generated_at bleibt leer, solange INCLUDE_GENERATED_AT nicht gesetzt ist
+          python scripts/export_sheet_to_json.py
+
+      - name: JS syntax check
+        run: node -c docs/app.js
+
+      - name: JSON sanity check
+        run: |
+          node - <<'NODE'
+          const fs=require("fs");
+          const j=JSON.parse(fs.readFileSync("docs/data/weapons_full.json","utf8"));
+          if (!j.weapons || j.weapons.length < 1) throw new Error("No weapons in weapons_full.json");
+          console.log("weapons:", j.weapons.length);
+          console.log("first:", j.weapons[0].name);
+          NODE
+
+      - name: Ensure repo stays clean (no noisy diffs)
+        run: |
+          git status --porcelain
+          git diff --exit-code
