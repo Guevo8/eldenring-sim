@@ -33,8 +33,8 @@ jobs:
       - name: JSON sanity check
         run: |
           node - <<'NODE'
-          const fs=require("fs");
-          const j=JSON.parse(fs.readFileSync("docs/data/weapons_full.json","utf8"));
+          const fs = require("fs");
+          const j = JSON.parse(fs.readFileSync("docs/data/weapons_full.json","utf8"));
           if (!j.weapons || j.weapons.length < 1) throw new Error("No weapons in weapons_full.json");
           console.log("weapons:", j.weapons.length);
           console.log("first:", j.weapons[0].name);
