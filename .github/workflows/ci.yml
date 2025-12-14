@@ -25,9 +25,7 @@ jobs:
         run: python -m py_compile scripts/export_sheet_to_json.py
 
       - name: Run export (deterministic)
-        run: |
-          # generated_at bleibt leer, solange INCLUDE_GENERATED_AT nicht gesetzt ist
-          python scripts/export_sheet_to_json.py
+        run: python scripts/export_sheet_to_json.py
 
       - name: JS syntax check
         run: node -c docs/app.js
