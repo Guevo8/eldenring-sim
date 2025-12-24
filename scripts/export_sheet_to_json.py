@@ -11,6 +11,7 @@ OUT_DIR = os.path.join(ROOT, "docs", "data")
 WEAPONS_CSV = os.path.join(DATA_DIR, "weapons_base.csv")
 REINFORCE_CSV = os.path.join(DATA_DIR, "reinforce_tables.csv")
 AFFINITY_CSV = os.path.join(DATA_DIR, "affinity_rules.csv")
+REGULATION_CSV = os.path.join(DATA_DIR, "regulation_params.csv")
 
 def fnum(x, default=0.0):
     try:
@@ -33,6 +34,11 @@ def s(x, default=""):
 def read_csv(path):
     with open(path, "r", encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+def maybe_read_csv(path):
+    if not os.path.exists(path):
+        return []
+    return read_csv(path)
 
 def ensure_dirs():
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -98,8 +104,10 @@ def build_weapons():
 
     return weapons, index
 
-def build_reinforce_tables():
-    rows = read_csv(REINFORCE_CSV)
+def build_reinforce_tables(reg_rows):
+    rows = [r for r in reg_rows if s(r.get("category")).lower() == "reinforce"]
+    if not rows:
+        rows = maybe_read_csv(REINFORCE_CSV)
     tables = {}
     for r in rows:
         path = s(r.get("upgrade_path"), "unknown")
@@ -111,8 +119,10 @@ def build_reinforce_tables():
         }
     return tables
 
-def build_affinity_rules():
-    rows = read_csv(AFFINITY_CSV)
+def build_affinity_rules(reg_rows):
+    rows = [r for r in reg_rows if s(r.get("category")).lower() == "affinity"]
+    if not rows:
+        rows = maybe_read_csv(AFFINITY_CSV)
     rules = []
     for r in rows:
         rules.append({
@@ -136,16 +146,44 @@ def build_affinity_rules():
         })
     return rules
 
+def parse_curve_points(val):
+    pts = []
+    if not val:
+        return pts
+    for part in str(val).split("|"):
+        if ":" not in part:
+            continue
+        k, v = part.split(":", 1)
+        pts.append({"stat": fnum(k, 0.0), "mult": fnum(v, 0.0)})
+    pts.sort(key=lambda p: p["stat"])
+    return pts
+
+def build_scaling_curves(reg_rows):
+    rows = [r for r in reg_rows if s(r.get("category")).lower() == "curve"]
+    curves = {}
+    for r in rows:
+        key = s(r.get("key")) or s(r.get("grade")) or s(r.get("affinity"))
+        if not key:
+            continue
+        pts = parse_curve_points(s(r.get("curve_points")))
+        if pts:
+            curves[key] = pts
+    if not curves:
+        curves["default"] = parse_curve_points("0:0|20:0.4|55:0.8|80:1.0|99:1.1")
+    return curves
+
 def main():
     ensure_dirs()
+    reg_rows = maybe_read_csv(REGULATION_CSV)
     weapons, index = build_weapons()
-    reinforce = build_reinforce_tables()
-    affinities = build_affinity_rules()
+    reinforce = build_reinforce_tables(reg_rows)
+    affinities = build_affinity_rules(reg_rows)
+    curves = build_scaling_curves(reg_rows)
 
     meta = {
         "generated_at": (datetime.now(timezone.utc).isoformat() if os.environ.get("INCLUDE_GENERATED_AT") else ""),
         "schema": "eldenring_sim_v1",
-        "note": "reinforce_tables/affinity_rules are placeholders until regulation params are imported.",
+        "note": "Reinforce and affinity data sourced from regulation params snapshot.",
     }
 
     full = {
@@ -153,6 +191,7 @@ def main():
         "weapons": weapons,
         "reinforce_tables": reinforce,
         "affinity_rules": affinities,
+        "scaling_curves": curves,
     }
 
     with open(os.path.join(OUT_DIR, "weapons_index.json"), "w", encoding="utf-8") as f:

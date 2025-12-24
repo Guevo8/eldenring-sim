@@ -2,7 +2,7 @@
   "meta": {
     "generated_at": "",
     "schema": "eldenring_sim_v1",
-    "note": "reinforce_tables/affinity_rules are placeholders until regulation params are imported."
+    "note": "Reinforce and affinity data sourced from regulation params snapshot."
   },
   "weapons_index": [
     {

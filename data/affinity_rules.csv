@@ -1,2 +1,14 @@
 affinity,allowed_on,base_phys_mult,base_mag_mult,base_fire_mult,base_ligh_mult,base_holy_mult,scaling_str_mult,scaling_dex_mult,scaling_int_mult,scaling_fth_mult,scaling_arc_mult,notes
-Standard,all,1,1,1,1,1,1,1,1,1,1,baseline
+standard,smithing|somber,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,1.00,Default affinity
+heavy,smithing|somber,1.05,1.00,1.00,1.00,1.00,1.65,0.25,1.00,1.00,0.90,Strength focused
+keen,smithing|somber,0.95,1.00,1.00,1.00,1.00,0.50,1.65,1.00,1.00,1.00,Dexterity focused
+quality,smithing|somber,1.00,1.00,1.00,1.00,1.00,1.25,1.25,1.00,1.00,1.00,Split STR/DEX scaling
+magic,smithing|somber,0.70,1.10,1.00,1.00,1.00,0.40,0.60,1.60,0.80,1.00,Intelligence scaling with sorcery damage
+fire,smithing|somber,0.75,1.00,1.10,1.00,1.00,1.10,0.50,1.00,0.80,1.00,Fire split damage
+flame_art,smithing|somber,0.70,1.00,1.00,1.00,1.05,0.80,0.40,1.00,1.60,1.00,Faith scaling fire
+lightning,smithing|somber,0.75,1.00,1.00,1.10,1.00,0.40,1.50,1.00,0.80,1.00,Lightning split damage
+sacred,smithing|somber,0.70,1.00,1.00,1.00,1.10,0.50,0.40,1.00,1.60,1.00,Holy damage and faith scaling
+cold,smithing|somber,0.85,0.95,1.00,1.00,1.00,0.90,1.15,1.25,0.95,1.05,Split INT/DEX scaling
+poison,smithing|somber,0.90,1.00,1.00,1.00,1.00,1.00,1.10,0.90,0.90,1.20,Arcane focus for buildup
+blood,smithing|somber,0.95,1.00,1.00,1.00,1.00,0.80,1.00,0.80,0.80,1.60,Bleed focus with arcane
+occult,smithing|somber,1.00,1.00,1.00,1.00,1.00,1.00,1.00,0.90,0.90,1.50,Arcane scaling without split damage

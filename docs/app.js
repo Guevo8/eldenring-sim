@@ -1,6 +1,8 @@
 let db = null;
 const el = (id) => document.getElementById(id);
 
+const GRADE_BASE = { S: 1.1, A: 1.0, B: 0.9, C: 0.75, D: 0.55, E: 0.4, "-": 0 };
+
 function sumBase(dmg){
   return (dmg.phys||0)+(dmg.mag||0)+(dmg.fire||0)+(dmg.ligh||0)+(dmg.holy||0);
 }
@@ -14,6 +16,58 @@ function meetsReq(req, stats, twoHand){
     stats.fth >= req.fth &&
     stats.arc >= req.arc
   );
+}
+
+function evalCurve(curves, grade, stat){
+  const pts = curves?.[grade] || curves?.default || [];
+  if (!pts.length) return 0;
+  if (stat <= pts[0].stat) return pts[0].mult;
+  for (let i = 1; i < pts.length; i++){
+    const prev = pts[i-1];
+    const curr = pts[i];
+    if (stat <= curr.stat){
+      const span = (curr.stat - prev.stat) || 1;
+      const t = (stat - prev.stat) / span;
+      return prev.mult + t * (curr.mult - prev.mult);
+    }
+  }
+  return pts[pts.length-1].mult;
+}
+
+function buildScaling(baseAdj, weapon, stats, twoHand, reinforceRow, affinityRule){
+  const curves = db?.scaling_curves || {};
+  const req = weapon.requirements;
+  const grade = weapon.scaling_grade_display;
+
+  const scaling = {phys:0,mag:0,fire:0,ligh:0,holy:0};
+  const total = {};
+
+  const statKeys = ["str","dex","int","fth","arc"];
+  for (const sk of statKeys){
+    const gradeLetter = grade?.[sk] || "-";
+    const baseCoeff = GRADE_BASE[gradeLetter] ?? 0;
+    if (baseCoeff === 0) continue;
+
+    const statValueRaw = stats[sk] || 0;
+    const statValue = (sk === "str" && twoHand) ? Math.floor(statValueRaw * 1.5) : statValueRaw;
+    const curveVal = evalCurve(curves, gradeLetter, statValue);
+    const mult = (affinityRule.scaling_mult?.[sk] || 1) * (reinforceRow.scaling_mult || 1);
+    const meets = statValue >= (req[sk] || 0);
+    const penalty = meets ? 1.0 : Math.max(0, (statValue / Math.max(req[sk] || 1, 1)) * 0.5);
+    const statScale = baseCoeff * curveVal * mult * penalty;
+
+    for (const dmgType of Object.keys(scaling)){
+      const baseForType = baseAdj[dmgType] || 0;
+      scaling[dmgType] += baseForType * statScale;
+    }
+  }
+
+  for (const dmgType of Object.keys(baseAdj)){
+    total[dmgType] = Math.round(baseAdj[dmgType] + (scaling[dmgType] || 0));
+    scaling[dmgType] = Math.round(scaling[dmgType] || 0);
+  }
+
+  return { scaling, total };
 }
 
 function readStats(){
@@ -47,7 +101,7 @@ function render(){
 
   const affinityRule =
     (db.affinity_rules || []).find(a => a.affinity === affinity) ||
-    { base_mult: {phys:1,mag:1,fire:1,ligh:1,holy:1} };
+    { base_mult: {phys:1,mag:1,fire:1,ligh:1,holy:1}, scaling_mult: {str:1,dex:1,int:1,fth:1,arc:1} };
 
   const base0 = weapon.base_damage_plus0;
   const baseAdj = {
@@ -57,6 +111,7 @@ function render(){
     ligh: Math.round(base0.ligh * reinforceRow.base_mult * (affinityRule.base_mult.ligh||1)),
     holy: Math.round(base0.holy * reinforceRow.base_mult * (affinityRule.base_mult.holy||1)),
   };
+  const scaling = buildScaling(baseAdj, weapon, stats, twoHand, reinforceRow, affinityRule);
 
   const reqLine = `REQ STR ${weapon.requirements.str} / DEX ${weapon.requirements.dex} / INT ${weapon.requirements.int} / FTH ${weapon.requirements.fth} / ARC ${weapon.requirements.arc}`;
   const grade = weapon.scaling_grade_display;
@@ -72,9 +127,13 @@ function render(){
 
   el("calc").innerHTML = `
     <div class="mono">Upgrade: +${upgrade} (path: ${path}) • Affinity: ${affinity}</div>
-    <div style="margin-top:8px"><strong>Base (adjusted, placeholder tables):</strong></div>
+    <div style="margin-top:8px"><strong>Base (reinforce + affinity):</strong></div>
     <div class="mono">Phys ${baseAdj.phys} | Mag ${baseAdj.mag} | Fire ${baseAdj.fire} | Ligh ${baseAdj.ligh} | Holy ${baseAdj.holy}</div>
-    <div style="margin-top:8px"><strong>Total Base AR (no scaling yet):</strong> ${sumBase(baseAdj)}</div>
+    <div style="margin-top:8px"><strong>Scaling contribution (curves + affinity + upgrade):</strong></div>
+    <div class="mono">Phys ${scaling.scaling.phys} | Mag ${scaling.scaling.mag} | Fire ${scaling.scaling.fire} | Ligh ${scaling.scaling.ligh} | Holy ${scaling.scaling.holy}</div>
+    <div style="margin-top:8px"><strong>Total AR:</strong></div>
+    <div class="mono">Phys ${scaling.total.phys} | Mag ${scaling.total.mag} | Fire ${scaling.total.fire} | Ligh ${scaling.total.ligh} | Holy ${scaling.total.holy}</div>
+    <div style="margin-top:8px"><strong>Sum:</strong> ${sumBase(scaling.total)}</div>
   `;
 }
 
