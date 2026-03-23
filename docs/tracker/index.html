@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elden Efficiency Tracker</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{background:#060606}</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+
+const GOLD = "#d4af37";
+const STONES = [
+  { id:"a3", type:"Normal", phase:"1", reqType:"Quest", name:"Gurranq (9. Wurzel)", loc:"Caelid - Bestien-Heiligtum", grace:"Bestien-Heiligtum", walk:"Gib Gurranq 9 Todeswurzeln oder töte ihn. Portal hinter der Dritten Kirche von Marika.", noGrace:"Dritte Kirche von Marika → Portal im Gebüsch nordöstlich.", avail:"Früh via Portal. Für 9 Wurzeln ist Haligbaum-Fortschritt nötig.", tip:"Töte ihn wenn stark genug — schneller." },
+  { id:"s3", type:"Dunkel", phase:"1", reqType:"Loot", name:"Mohgwyn Altar Truhe", loc:"Mohgwyn-Palast", grace:"Dynastiemausoleum - Mitte", walk:"Truhe vor Statue bei den betenden Albinaurics.", noGrace:"Varrés Quest für Medaillon ODER Portal im Geweihten Schneefeld.", avail:"Theoretisch nach Godrick via Varré-Quest (sehr früh!).", tip:"Schnellster +10 Stein im gesamten Spiel." },
+  { id:"a1", type:"Normal", phase:"2", reqType:"Quest", name:"Nepheli Loux Belohnung", loc:"Schloss Sturmschleier", grace:"Thronsaal von Godrick", walk:"Nepheli + Kenneth im Thronsaal nach Morgott-Sieg.", noGrace:"Quest startet in Limgrave. Godrick + Morgott müssen besiegt sein.", avail:"Direkt nach Morgott-Sieg in Leyndell.", tip:"Kenneth Haights Quest + Gostoc am Leben lassen!" },
+  { id:"a2", type:"Normal", phase:"2", reqType:"Quest", name:"Gostoc Shop", loc:"Schloss Sturmschleier", grace:"Thronsaal von Godrick", walk:"Kauf für 20.000 Runen bei Gostoc im Thronsaal.", noGrace:"Gleichzeitig mit Nepheli verfügbar.", avail:"Gleichzeitig mit Nephelis Stein (nach Morgott).", tip:"Gostoc NICHT töten!" },
+  { id:"a4", type:"Normal", phase:"2", reqType:"Quest", name:"Jerren / Sellen Entscheidung", loc:"Akademie Raya Lucaria", grace:"Große Bibliothek", walk:"ROTES Rufsymbol vor der Bibliothek — Jerren helfen.", noGrace:"Akademie abschließen + Sellens Quest fortschreiten.", avail:"Sobald Sellen in die Akademie zieht.", tip:"Sellen helfen = kein Stein! Jerren wählen." },
+  { id:"a5", type:"Normal", phase:"3", reqType:"Loot", name:"Riesenschädel", loc:"Berggipfel der Riesen", grace:"Kirche des Stillstands", walk:"Südöstlich der Kirche, im Mund eines Schädels an der Klippe.", noGrace:"Südöstlichster Punkt der Berggipfel.", avail:"Sofort nach Erreichen der Berggipfel.", tip:"Kein Kampf nötig." },
+  { id:"s1", type:"Dunkel", phase:"3", reqType:"Quest", name:"Latenna Finale", loc:"Schneefeld - Norden", grace:"Religiöses Refugium", walk:"Beschwöre Latenna vor der Riesenfrau im Norden.", noGrace:"Latenna in Liurnia finden → Geheim-Medaillon.", avail:"Geheimes Haligbaummedaillon (beide Hälften).", tip:"Latenna muss am Leben sein." },
+  { id:"s2", type:"Dunkel", phase:"3", reqType:"Boss", name:"Anastasia 3. Invasion", loc:"Schneefeld - Fluss", grace:"Aufstieg nach Ordina", walk:"Anastasia am gefrorenen Fluss südwestlich von Ordina.", noGrace:"Flusslauf nordwärts folgen, triggert automatisch.", avail:"3. und letzte Invasion im Spielverlauf.", tip:"Direkter Drop nach dem Kampf." },
+  { id:"a6", type:"Normal", phase:"3", reqType:"Boss", name:"Nachtreiter Duo", loc:"Geweihtes Schneefeld", grace:"Inneres Geweihtes Schneefeld", walk:"Zwei Nachtreiter der Karawane — NUR NACHTS!", noGrace:"Zentral im Schneefeld bei der Karawane.", avail:"Nur nachts verfügbar.", tip:"Einzeln herauslocken!" },
+  { id:"a7", type:"Normal", phase:"3", reqType:"Loot", name:"Yelough Anix Tunnel", loc:"Yelough Anix", grace:"Tunnel von Yelough Anix", walk:"Truhe im tiefsten Bereich des Tunnels.", noGrace:"Westlichstes Gebiet des Schneefelds.", avail:"Nach Erreichen des Schneefelds.", tip:"Wahnsinn-Effekte — Arcane-Resistenz empfohlen." },
+  { id:"a8", type:"Normal", phase:"3", reqType:"Loot", name:"Wasserfall-Leiche", loc:"Theodorix Areal", grace:"Höhle der Verlorenen", walk:"Über Eissäulen rechts vom Fluss zum Wasserfall.", noGrace:"Nordost-Flusslauf im Schneefeld.", avail:"Kein Bosssieg nötig.", tip:"Vom Wasser aus nach rechts schauen." },
+  { id:"a9", type:"Normal", phase:"4", reqType:"Boss", name:"Erster Farum Drache", loc:"Farum Azula", grace:"Bestien-Grabruinen", walk:"Drachen auf erster Außenplattform.", noGrace:"Automatisch nach Schmiede der Riesen.", avail:"Einstiegsbereich Farum Azula.", tip:"Kommt nach Rasten zurück." },
+  { id:"a10", type:"Normal", phase:"4", reqType:"Loot", name:"Drachentempel Geheimweg", loc:"Farum Azula", grace:"Drachentempel", walk:"Fenstersprung-Parkour zu schwebender Plattform.", noGrace:"Drachentempel-Komplex, Fenster links.", avail:"Geschick nötig.", tip:"Bewacht von Bestienmenschen." },
+  { id:"a11", type:"Normal", phase:"4", reqType:"Boss", name:"Blitz-Drache Plaza", loc:"Farum Azula", grace:"Drachentempel-Dach", walk:"Drachen auf dem Platz nach dem Tempel-Dach.", noGrace:"Weg zum Endboss Farum Azula.", avail:"Spätes Farum Azula.", tip:"Pavillon dahinter = Dunkelstein. Beide nehmen!" },
+  { id:"s8", type:"Dunkel", phase:"4", reqType:"Loot", name:"Farum Azula Pavillon", loc:"Farum Azula", grace:"Drachentempel-Dach", walk:"Pavillon hinter dem Blitz-Drachen.", noGrace:"Gleicher Ort wie Blitz-Drache.", avail:"Ende Farum Azula.", tip:"Doppel-Fundort: Normal + Dunkel." },
+  { id:"a12", type:"Normal", phase:"4", reqType:"Loot", name:"Haligbaum Statue", loc:"Haligbaum", grace:"Haligbaum-Stadt", walk:"Vor Statue, bewacht von Löwen-Scheusal.", noGrace:"Via Ordina-Rätsel (4 Feuerstellen).", avail:"Wipfel des Haligbaums.", tip:"Löwen einzeln herauslocken." },
+  { id:"a13", type:"Normal", phase:"4", reqType:"Loot", name:"Truhe nach Loretta", loc:"Elphael", grace:"Promenade der Ritter", walk:"Truhe am Treppenende nach Loretta.", noGrace:"Loretta im Haligbaum besiegen.", avail:"Übergang Haligbaum → Elphael.", tip:"Direkt auf dem Weg." },
+  { id:"s4", type:"Dunkel", phase:"4", reqType:"Loot", name:"Elphael Pfeiler-Truhe", loc:"Elphael", grace:"Gebetszimmer", walk:"Parkour über Stützpfeiler zur Nische.", noGrace:"Startbereich Elphael.", avail:"Präzise Sprünge nötig.", tip:"Starke Ritter bewachen den Weg." },
+  { id:"s5", type:"Dunkel", phase:"4", reqType:"Loot", name:"Elphael Fäule-Leiche", loc:"Elphael", grace:"Gebetszimmer", walk:"Runter zum Baumgeist, Süden am Rand entlang.", noGrace:"Untere Außenmauer, Fäule-Bereich.", avail:"Im Fäule-Bereich.", tip:"Antidot mitnehmen!" },
+  { id:"s6", type:"Dunkel", phase:"4", reqType:"Quest", name:"Belohnung: Millicent-Quest", loc:"Malenia Bossraum", grace:"Wurzeln des Haligbaums", walk:"Malenia besiegen → Millicents Nadel am Blumen-Punkt.", noGrace:"Finaler Haligbaum-Boss.", avail:"Sieg über Malenia + vollständige Millicent-Quest.", tip:"Härtester Boss im Spiel." },
+  { id:"s7", type:"Dunkel", phase:"4", reqType:"Loot", name:"Aschene Stadt Leiche", loc:"Leyndell (Ende)", grace:"Leyndell, Aschene Hauptstadt", walk:"Gebäude hinter Drachenflügel bei Gargoyle.", noGrace:"Nur nach Maliketh-Sieg zugänglich.", avail:"Ende des Hauptspiels.", tip:"Verpassbar wenn direkt zum Endboss!" },
+  { id:"sdlc1", type:"Dunkel", phase:"5", reqType:"Boss", name:"Grabfeld-Drache", loc:"Grabfeld-Ebene", grace:"Große Brücke, Nord", walk:"Geisterflammendrachen im Westen.", noGrace:"Erstes Wasserbecken im DLC.", avail:"Früh im DLC.", tip:"Heiliger Schaden empfohlen." },
+  { id:"adlc1", type:"Normal", phase:"5", reqType:"Loot", name:"Lava Intake Ofen", loc:"Grabfeld-Ebene", grace:"Ruinenforst Lava Intake", walk:"Ofen am Ende des Dungeons.", noGrace:"Südost-Ecke Grabfeld.", avail:"Kurzer Dungeon.", tip:"Gibt auch Amboss-Hammer." },
+  { id:"adlc3", type:"Normal", phase:"5", reqType:"Loot", name:"Säule der Unterdrückung", loc:"Grabfeld-Ebene", grace:"Säule der Unterdrückung", walk:"Truhe auf der Spitze der Säule.", noGrace:"Nördlich von Schloss Ensis, Lift nehmen.", avail:"Kein Boss nötig.", tip:"Schnellster Stein im DLC." },
+  { id:"sdlc2", type:"Dunkel", phase:"5", reqType:"Boss", name:"Scadu-Altus Drache", loc:"Scadu-Altus", grace:"Fort Reprimand", walk:"Geisterflammendrachen im Norden.", noGrace:"Nach Schloss Ensis.", avail:"Nach Rellana.", tip:"Kämpft gegen NPCs — nutzen!" },
+  { id:"adlc4", type:"Normal", phase:"5", reqType:"Loot", name:"Sternenfall-Schmiede", loc:"Scadu-Altus", grace:"Ruinenforst von Starfall Past", walk:"Ofen am Ende des Dungeons.", noGrace:"Südwestliches Scadu-Altus.", avail:"Dungeon-Abschluss.", tip:"Gibt auch meteoritisches Schwert." },
+  { id:"sdlc3", type:"Dunkel", phase:"5", reqType:"Boss", name:"Cerulean Küsten-Drache", loc:"Cerulean Coast", grace:"Cerulean Coast", walk:"Geisterflammendrachen im Süden.", noGrace:"Südküste via Schluchten.", avail:"Verstecktes Gebiet.", tip:"Heiliger Schaden." },
+  { id:"adlc2", type:"Normal", phase:"6", reqType:"Boss", name:"Magmawyrm Drop", loc:"Drachengrube", grace:"Drachengrube (Ende)", walk:"Magmawyrm im Dungeon besiegen.", noGrace:"Pflichtweg zum Zackenberg.", avail:"Pflichtboss.", tip:"Einfacher als Hauptspiel-Wyrm." },
+  { id:"adlc5", type:"Normal", phase:"6", reqType:"Boss", name:"Senessax Sieg", loc:"Zackenberg", grace:"Gipfel des Zackenbergs", walk:"Uralten Drachen Senessax besiegen.", noGrace:"Hauptweg den Berg hoch.", avail:"Hauptboss Zackenberg.", tip:"Gibt BEIDE Stein-Typen!" },
+  { id:"sdlc4", type:"Dunkel", phase:"6", reqType:"Boss", name:"Senessax Dunkel-Drop", loc:"Zackenberg", grace:"Gipfel des Zackenbergs", walk:"Zweiter Drop von Senessax.", noGrace:"Mitte des Zackenbergs.", avail:"Nur durch Senessax-Sieg.", tip:"Seltenster Doppel-Drop im Spiel." },
+  { id:"adlc6", type:"Normal", phase:"6", reqType:"Loot", name:"Blitz-Schleim Klippe", loc:"Zackenberg", grace:"Gipfel des Zackenbergs", walk:"Bei blauen Schleimen vor Bayles Nebel.", noGrace:"Nach Senessax den Berg hoch.", avail:"Im Gewitter leicht übersehen.", tip:"Vor Bayle absuchen!" },
+  { id:"sdlc5", type:"Dunkel", phase:"6", reqType:"Loot", name:"Bayle-Pfad Leiche", loc:"Zackenberg", grace:"Gipfel des Zackenbergs", walk:"Leiche direkt vor Bayles Bossnebel.", noGrace:"Höchster Punkt Zackenberg.", avail:"Vor Endboss.", tip:"Nicht vergessen!" },
+  { id:"adlc7", type:"Normal", phase:"6", reqType:"Loot", name:"Taylew Balkon", loc:"Rauh Base", grace:"Taylews Ruinenforst", walk:"Balkon im Golem-Saal.", noGrace:"Fuß des Rauh-Berges.", avail:"Tief im Dungeon.", tip:"Golems einzeln herauslocken." },
+  { id:"adlc8", type:"Normal", phase:"6", reqType:"Loot", name:"Taylew Ofen", loc:"Rauh Base", grace:"Taylews Ruinenforst (Ende)", walk:"Ofen am Dungeon-Ende.", noGrace:"Nach dem Golem-Saal.", avail:"Ende des Dungeons.", tip:"Gibt auch Taylew-Asche." },
+  { id:"sdlc6", type:"Dunkel", phase:"6", reqType:"Loot", name:"Enir-Ilim Leiche", loc:"Enir-Ilim", grace:"Erstes Revier", walk:"Außentreppe nach erstem Lift.", noGrace:"Nach Messmer-Sieg.", avail:"Absolutes DLC-Ende.", tip:"Vor Endboss sichern!" },
+];
+const PHASES = [
+  {id:"1", label:"1: Früher Zugang"},
+  {id:"2", label:"2: Hauptstadt-Abschluss"},
+  {id:"3", label:"3: Berggipfel / Schneefeld"},
+  {id:"4", label:"4: Letzte Gebiete"},
+  {id:"5", label:"5: DLC Einstieg"},
+  {id:"6", label:"6: DLC Finale"},
+];
+const RS = {
+  "Boss":  {bg:"rgba(239,68,68,0.15)",  color:"#fca5a5", label:"⚔ Boss"},
+  "Quest": {bg:"rgba(168,85,247,0.15)", color:"#d8b4fe", label:"📜 Quest"},
+  "Loot":  {bg:"rgba(34,197,94,0.15)",  color:"#86efac", label:"⛏ Welt"},
+};
+function EldenTracker() {
+  const { useState, useMemo } = React;
+  const [search, setSearch] = useState("");
+  const [typeF, setTypeF] = useState("Alle");
+  const [regionF, setRegionF] = useState("Alle");
+  const [phaseF, setPhaseF] = useState("Alle");
+  const [onlyOpen, setOnlyOpen] = useState(false);
+  const [expanded, setExpanded] = useState(null);
+  const [collected, setCollected] = useState(new Set());
+  const toggle = (id, e) => {
+    e.stopPropagation();
+    setCollected(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+  const prog = useMemo(() => {
+    const nor = STONES.filter(s => s.type === "Normal");
+    const drk = STONES.filter(s => s.type === "Dunkel");
+    return {
+      n:   {d: nor.filter(s => collected.has(s.id)).length, t: nor.length},
+      d:   {d: drk.filter(s => collected.has(s.id)).length, t: drk.length},
+      all: {d: collected.size, t: STONES.length}
+    };
+  }, [collected]);
+  const filtered = useMemo(() => STONES.filter(s => {
+    const q = search.toLowerCase();
+    const isBase = parseInt(s.phase) <= 4;
+    return (!q || s.name.toLowerCase().includes(q) || s.loc.toLowerCase().includes(q))
+      && (typeF === "Alle" || s.type === typeF)
+      && (regionF === "Alle" || (regionF === "Hauptspiel" ? isBase : !isBase))
+      && (phaseF === "Alle" || s.phase === phaseF)
+      && (!onlyOpen || !collected.has(s.id));
+  }), [search, typeF, regionF, phaseF, onlyOpen, collected]);
+  const grouped = useMemo(() => {
+    const g = {};
+    filtered.forEach(s => { (g[s.phase] = g[s.phase] || []).push(s); });
+    return g;
+  }, [filtered]);
+  const next = useMemo(() => {
+    for (const p of PHASES) {
+      const s = STONES.find(s => s.phase === p.id && !collected.has(s.id));
+      if (s) return s;
+    }
+    return null;
+  }, [collected]);
+  const pct = (d, t) => t > 0 ? Math.round(d/t*100) + "%" : "0%";
+  const allDone = prog.all.d === prog.all.t;
+  return (
+    <div style={{minHeight:"100vh", background:"#060606", color:"#e5e7eb", fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif", paddingBottom:64}}>
+      <div style={{maxWidth:600, margin:"0 auto", padding:"16px 12px 0"}}>
+        <div style={{textAlign:"center", marginBottom:14}}>
+          <h1 style={{fontSize:22, fontWeight:700, letterSpacing:"0.1em", color:GOLD, fontFamily:"Georgia,serif", marginBottom:2}}>✦ ELDEN EFFICIENCY ✦</h1>
+          <p style={{fontSize:9, letterSpacing:"0.3em", color:"#4b5563", textTransform:"uppercase", fontWeight:700}}>Optimierte Sammel-Route</p>
+        </div>
+        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:10}}>
+          {[
+            {label:"🔥 Normal", color:"#f97316", d:prog.n.d, t:prog.n.t},
+            {label:"🏆 Gesamt", color:GOLD,      d:prog.all.d, t:prog.all.t},
+            {label:"✨ Dunkel", color:"#60a5fa", d:prog.d.d, t:prog.d.t},
+          ].map(p => (
+            <div key={p.label} style={{background:"#111", border:"1px solid " + p.color + "25", borderRadius:12, padding:"9px 10px"}}>
+              <div style={{display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+                <span style={{fontSize:9, color:"#6b7280", fontWeight:700}}>{p.label}</span>
+                <span style={{fontSize:11, fontWeight:700, color:p.color}}>{p.d}/{p.t}</span>
+              </div>
+              <div style={{height:4, background:"#1f2937", borderRadius:99, overflow:"hidden", marginTop:6}}>
+                <div style={{height:"100%", width:pct(p.d,p.t), background:p.color, borderRadius:99, transition:"width 0.3s"}} />
+              </div>
+            </div>
+          ))}
+        </div>
+        {next && !allDone && (
+          <div style={{background:"#1a150c", border:"1px solid " + GOLD + "30", borderRadius:12, padding:"9px 12px", display:"flex", alignItems:"center", gap:10, marginBottom:10}}>
+            <span>🎯</span>
+            <div style={{flex:1, minWidth:0}}>
+              <div style={{fontSize:9, color:"#6b7280", textTransform:"uppercase", letterSpacing:"0.15em", fontWeight:700}}>Nächster Stein</div>
+              <div style={{fontSize:13, color:GOLD + "dd", fontFamily:"Georgia,serif", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>
+                {next.name} <span style={{color:"#6b7280", fontFamily:"sans-serif", fontSize:10}}>· {next.loc}</span>
+              </div>
+            </div>
+            <span style={{fontSize:9, color:"#4b5563", fontWeight:700}}>P{next.phase}</span>
+          </div>
+        )}
+        {allDone && (
+          <div style={{background:"#0a1a0a", border:"1px solid #22c55e40", borderRadius:12, padding:"10px", textAlign:"center", marginBottom:10}}>
+            <div style={{fontSize:13, color:"#22c55e", fontWeight:700}}>🎉 Alle Steine gesammelt!</div>
+          </div>
+        )}
+        <div style={{background:"#111", border:"1px solid #1f2937", borderRadius:14, padding:12, marginBottom:12}}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍  Suchen..."
+            style={{width:"100%", background:"#0a0a0a", border:"1px solid #1f2937", borderRadius:10, padding:"9px 12px", color:"#e5e7eb", fontSize:13, marginBottom:9, boxSizing:"border-box"}} />
+          <div style={{display:"flex", gap:6, marginBottom:8}}>
+            {[
+              [typeF, setTypeF, [["Alle","Alle"],["Normal","Normal"],["Dunkel","Dunkel"]]],
+              [regionF, setRegionF, [["Alle","Alle"],["Hauptspiel","Base"],["DLC","DLC"]]],
+              [phaseF, setPhaseF, [["Alle","Phase ∞"], ...PHASES.map(p=>[p.id,"Phase " + p.id])]],
+            ].map(([val,set,opts],i) => (
+              <select key={i} value={val} onChange={e => set(e.target.value)}
+                style={{flex:1, background:"#0a0a0a", border:"1px solid #1f2937", borderRadius:8, padding:"8px 6px", color:"#d1d5db", fontSize:11, minWidth:0}}>
+                {opts.map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            ))}
+          </div>
+          <button onClick={() => setOnlyOpen(v => !v)}
+            style={{width:"100%", background:onlyOpen ? GOLD + "15" : "#0a0a0a", border:onlyOpen ? "1px solid " + GOLD + "50" : "1px solid #1f2937", borderRadius:10, padding:"8px 12px", color:onlyOpen ? GOLD : "#6b7280", fontSize:11, fontWeight:700, textTransform:"uppercase", cursor:"pointer"}}>
+            {onlyOpen ? "👁 Nur fehlende Steine" : "👁 Alle Steine"}
+          </button>
+        </div>
+        {filtered.length === 0 && (
+          <div style={{textAlign:"center", padding:"50px 0", color:"#374151"}}>
+            <div style={{fontSize:36, marginBottom:10}}>🏆</div>
+            <p style={{fontSize:12, textTransform:"uppercase", letterSpacing:"0.1em"}}>Kein Treffer</p>
+          </div>
+        )}
+        {PHASES.map(ph => {
+          const stones = grouped[ph.id];
+          if (!stones || !stones.length) return null;
+          const done = stones.filter(s => collected.has(s.id)).length;
+          return (
+            <div key={ph.id} style={{marginBottom:16}}>
+              <div style={{position:"sticky", top:0, zIndex:10, background:"rgba(6,6,6,0.97)", paddingTop:6, paddingBottom:6, marginBottom:6}}>
+                <div style={{display:"flex", alignItems:"center", gap:8}}>
+                  <span style={{fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.18em", color:GOLD + "bb"}}>📍 {ph.label}</span>
+                  <div style={{flex:1, height:1, background:GOLD + "15"}} />
+                  <span style={{fontSize:10, color:"#4b5563", fontWeight:700}}>{done}/{stones.length}</span>
+                </div>
+              </div>
+              {stones.map(s => {
+                const isExp = expanded === s.id;
+                const isDone = collected.has(s.id);
+                const rs = RS[s.reqType] || {bg:"#1f2937", color:"#9ca3af", label:"Info"};
+                return (
+                  <div key={s.id} style={{marginBottom:7, border:"1px solid " + (isExp ? GOLD : "#111827"), background:isExp ? "#1a1a17" : "#0d0d0d", borderRadius:13, overflow:"hidden", opacity:isDone ? 0.4 : 1, transition:"border 0.15s, opacity 0.15s"}}>
+                    <div onClick={() => setExpanded(isExp ? null : s.id)}
+                      style={{padding:"11px 12px", display:"flex", alignItems:"center", gap:10, cursor:"pointer"}}>
+                      <div style={{width:34, height:34, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, background:s.type==="Normal" ? "rgba(249,115,22,0.12)" : "rgba(96,165,250,0.12)", fontSize:17}}>
+                        {s.type === "Normal" ? "🔥" : "✨"}
+                      </div>
+                      <div style={{flex:1, minWidth:0}}>
+                        <div style={{fontSize:14, fontWeight:700, color:isDone ? "#4b5563" : isExp ? GOLD : "#f3f4f6", textDecoration:isDone ? "line-through" : "none", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{s.name}</div>
+                        <div style={{display:"flex", alignItems:"center", gap:6, marginTop:3}}>
+                          <span style={{fontSize:10, fontWeight:700, color:rs.color, background:rs.bg, borderRadius:99, padding:"2px 7px", flexShrink:0}}>{rs.label}</span>
+                          <span style={{fontSize:10, color:"#6b7280", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{s.loc}</span>
+                        </div>
+                      </div>
+                      <div style={{display:"flex", alignItems:"center", gap:6, flexShrink:0}}>
+                        <button onClick={e => toggle(s.id, e)}
+                          style={{width:32, height:32, borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", border:isDone ? "1px solid #16a34a60" : "1px solid #1f2937", background:isDone ? "rgba(22,163,74,0.2)" : "#0a0a0a", cursor:"pointer", fontSize:15}}>
+                          {isDone ? "✅" : "⬜"}
+                        </button>
+                        <span style={{fontSize:18, color:isExp ? GOLD : "#374151", display:"inline-block", transform:isExp ? "rotate(180deg)" : "none", transition:"transform 0.2s"}}>⌄</span>
+                      </div>
+                    </div>
+                    {isExp && (
+                      <div style={{padding:"0 12px 14px", borderTop:"1px solid #1f2937", background:"#080808"}}>
+                        <div style={{margin:"12px 0 10px", background:"rgba(26,21,12,0.9)", border:"1px solid " + GOLD + "20", borderRadius:10, padding:"10px 12px"}}>
+                          <div style={{fontSize:9, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.15em", color:GOLD, marginBottom:5}}>🔒 Verfügbarkeit</div>
+                          <p style={{fontSize:13, color:GOLD + "cc", fontFamily:"Georgia,serif", fontStyle:"italic", lineHeight:1.6, margin:0}}>{s.avail}</p>
+                        </div>
+                        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10}}>
+                          <div>
+                            <div style={{fontSize:9, fontWeight:700, textTransform:"uppercase", color:"#9ca3af", borderBottom:"1px solid #1f2937", paddingBottom:5, marginBottom:7}}>✅ Ab: {s.grace}</div>
+                            <p style={{fontSize:12, color:"#9ca3af", lineHeight:1.6, margin:0}}>{s.walk}</p>
+                          </div>
+                          <div>
+                            <div style={{fontSize:9, fontWeight:700, textTransform:"uppercase", color:"#9ca3af", borderBottom:"1px solid #1f2937", paddingBottom:5, marginBottom:7}}>🧭 Ohne Gnade</div>
+                            <p style={{fontSize:12, color:"#6b7280", lineHeight:1.6, margin:0}}>{s.noGrace}</p>
+                          </div>
+                        </div>
+                        <div style={{display:"flex", gap:8, background:"#111", border:"1px solid #1f2937", borderRadius:10, padding:"9px 11px", alignItems:"flex-start"}}>
+                          <span style={{flexShrink:0}}>💡</span>
+                          <p style={{fontSize:11, color:"#6b7280", fontStyle:"italic", lineHeight:1.6, margin:0}}>
+                            <strong style={{color:"#9ca3af", fontStyle:"normal"}}>Tipp: </strong>{s.tip}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{position:"fixed", bottom:0, left:0, right:0, background:"rgba(6,6,6,0.97)", borderTop:"1px solid #111827", padding:"9px 16px", zIndex:50}}>
+        <div style={{maxWidth:600, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+          <span style={{fontSize:9, fontWeight:700, letterSpacing:"0.2em", color:GOLD + "60", textTransform:"uppercase"}}>Effizienz-Route</span>
+          <div style={{display:"flex", gap:12}}>
+            <span style={{fontSize:11, color:"#f97316"}}>🔥 {prog.n.d}/{prog.n.t}</span>
+            <span style={{fontSize:11, color:"#60a5fa"}}>✨ {prog.d.d}/{prog.d.t}</span>
+            <span style={{fontSize:12, fontWeight:700, color:GOLD}}>{pct(prog.all.d, prog.all.t)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<EldenTracker />);
+  </script>
+</body>
+</html>

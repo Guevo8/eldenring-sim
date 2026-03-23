@@ -1,0 +1,518 @@
+import os, re
+
+BASE = os.path.expanduser("~/dev/portfolio/eldenring-sim")
+
+JSX = r"""
+const DEFAULT_STATS = { lvl: 107, vig: 40, mind: 15, end: 35, str: 57, dex: 14, int: 10, fai: 9, arc: 7 };
+const DEFAULT_EQUIP = {
+  right: 'ruins_gs', rightInf: 'standard', right2H: false,
+  left:  'grafted_gs', leftInf: 'standard', left2H: false,
+  helm: 'rennala_crown', chest: 'veteran_chest', gloves: 'veteran_gloves', legs: 'veteran_legs',
+  talismans: ["Scherbe von Alexander", "Klauentalisman", "Marikas Narbensiegel", "Talisman des großen Gefäßes"]
+};
+const SCHEMA_VERSION = '2.0.0';
+const WEAPON_CATEGORIES = {
+  dagger:'Dolche', straight_sword:'Geradschwert', greatsword:'Großschwert',
+  colossal_sword:'Riesenschwert', thrusting_sword:'Stoßschwert',
+  heavy_thrusting_sword:'Schweres Stoßschwert', curved_sword:'Krummschwert',
+  curved_greatsword:'Krummes Großschwert', katana:'Katana', twinblade:'Zwillingsklinge',
+  light_greatsword:'Leichtes Großschwert ✦', great_katana:'Großes Katana ✦',
+  backhand_blade:'Rückenhand-Klinge ✦', hammer:'Hammer', flail:'Flegel',
+  great_hammer:'Großhammer', great_axe:'Große Axt', axe:'Axt',
+  colossal_weapon:'Kolossale Waffe', spear:'Speer', great_spear:'Großer Speer',
+  halberd:'Hellebarde', reaper:'Sense', whip:'Peitsche', fist:'Faust', claw:'Klaue',
+  hand_to_hand:'Hand-zu-Hand ✦', beast_claw:'Bestienklau ✦',
+  thrusting_shield:'Stoßschild ✦', perfume_bottle:'Parfümflakon ✦',
+  throwing_blade:'Wurfklinge ✦', light_bow:'Leichter Bogen', bow:'Bogen',
+  greatbow:'Großbogen', crossbow:'Armbrust', ballista:'Balliste', torch:'Fackel',
+  small_shield:'Kleines Schild', medium_shield:'Mittleres Schild',
+  greatshield:'Großschild', glintstone_staff:'Glintstein-Stab', sacred_seal:'Heiliges Siegel',
+};
+const VALID_AFFINITIES = ['standard','heavy','keen','quality','fire','flame_art','lightning','sacred','magic','cold','poison','blood','occult'];
+const VALID_PHYS_DMG_TYPES = ['Standard','Strike','Slash','Pierce'];
+const SOMBER_AFFINITIES = ['standard'];
+const ALL_AFFINITIES = [...VALID_AFFINITIES];
+const ARMOR_SLOTS = { helm:"Helm", chest:"Brustschutz", gloves:"Handschuhe", legs:"Beinschutz" };
+const INFUSIONS = {
+  standard:  { name:"Standard",     scaleMod:{ str:1.0,dex:1.0,int:1.0,fai:1.0,arc:1.0 }, baseMod:1.00 },
+  heavy:     { name:"Schwer",       scaleMod:{ str:1.5,dex:0.1,int:0.0,fai:0.0,arc:0.0 }, baseMod:0.90 },
+  keen:      { name:"Keen",         scaleMod:{ str:0.1,dex:1.5,int:0.0,fai:0.0,arc:0.0 }, baseMod:0.90 },
+  quality:   { name:"Qualität",     scaleMod:{ str:1.1,dex:1.1,int:0.0,fai:0.0,arc:0.0 }, baseMod:0.80 },
+  fire:      { name:"Feuer",        scaleMod:{ str:0.0,dex:0.0,int:0.0,fai:0.0,arc:0.0 }, baseMod:0.85 },
+  flame_art: { name:"Flammenkunst", scaleMod:{ str:0.0,dex:0.0,int:0.0,fai:1.2,arc:0.0 }, baseMod:0.75 },
+  lightning: { name:"Blitz",        scaleMod:{ str:0.0,dex:0.0,int:0.0,fai:0.0,arc:0.0 }, baseMod:0.85 },
+  sacred:    { name:"Heilig",       scaleMod:{ str:0.0,dex:0.0,int:0.0,fai:1.2,arc:0.0 }, baseMod:0.75 },
+  magic:     { name:"Magisch",      scaleMod:{ str:0.4,dex:0.2,int:1.3,fai:0.0,arc:0.0 }, baseMod:0.75 },
+  cold:      { name:"Kalt",         scaleMod:{ str:0.3,dex:0.3,int:1.1,fai:0.0,arc:0.0 }, baseMod:0.80 },
+  poison:    { name:"Gift",         scaleMod:{ str:0.8,dex:0.8,int:0.0,fai:0.0,arc:1.0 }, baseMod:0.70 },
+  blood:     { name:"Blutig",       scaleMod:{ str:0.8,dex:0.8,int:0.0,fai:0.0,arc:1.2 }, baseMod:0.70 },
+  occult:    { name:"Okkulte",      scaleMod:{ str:0.5,dex:0.5,int:0.0,fai:0.0,arc:1.4 }, baseMod:0.75 },
+};
+const encodeData = (obj) => {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  return btoa(Array.from(bytes, b => String.fromCharCode(b)).join(''));
+};
+const decodeData = (str) => {
+  const bytes = Uint8Array.from(atob(str), c => c.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+};
+const safeGetItem = (key, fallback) => {
+  try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; }
+  catch { return fallback; }
+};
+const safeSetItem = (key, value) => {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+};
+const createWeapon = (data) => ({
+  id: data.id, name: data.name, nameEN: data.nameEN ?? data.name,
+  category: data.category, isSomber: data.isSomber, isDLC: data.isDLC ?? false,
+  icon: data.icon ?? '⚔️', weight: data.weight ?? 0,
+  physDmgType: data.physDmgType ?? 'Standard', critical: data.critical ?? 100,
+  baseDamage: { phys:data.baseDamage?.phys??0, mag:data.baseDamage?.mag??0, fire:data.baseDamage?.fire??0, light:data.baseDamage?.light??0, holy:data.baseDamage?.holy??0 },
+  maxDamage:  { phys:data.maxDamage?.phys??0,  mag:data.maxDamage?.mag??0,  fire:data.maxDamage?.fire??0,  light:data.maxDamage?.light??0,  holy:data.maxDamage?.holy??0  },
+  scaling: { str:data.scaling?.str??0, dex:data.scaling?.dex??0, int:data.scaling?.int??0, fai:data.scaling?.fai??0, arc:data.scaling?.arc??0 },
+  passive: { bleed:data.passive?.bleed??0, frost:data.passive?.frost??0, poison:data.passive?.poison??0, rot:data.passive?.rot??0, madness:data.passive?.madness??0, sleep:data.passive?.sleep??0 },
+  req: { str:data.req?.str??0, dex:data.req?.dex??0, int:data.req?.int??0, fai:data.req?.fai??0, arc:data.req?.arc??0 },
+  supportedAffinities: data.supportedAffinities ?? (data.isSomber ? SOMBER_AFFINITIES : ALL_AFFINITIES),
+  defaultSkill: data.defaultSkill ?? 'Unbekannt', spellScaling: data.spellScaling ?? 0,
+  patchLastVerified: data.patchLastVerified ?? '1.12', notes: data.notes ?? '',
+});
+const validateWeapon = (w) => {
+  const errors = [];
+  const L = `[${w.id ?? 'KEIN-ID'}]`;
+  if (!w.id) errors.push(`${L} Fehlendes Feld: id`);
+  if (!w.name) errors.push(`${L} Fehlendes Feld: name`);
+  if (!w.category) errors.push(`${L} Fehlendes Feld: category`);
+  if (typeof w.isSomber !== 'boolean') errors.push(`${L} isSomber muss boolean sein`);
+  if (w.category && !WEAPON_CATEGORIES[w.category]) errors.push(`${L} Unbekannte Kategorie: "${w.category}"`);
+  if (w.physDmgType && !VALID_PHYS_DMG_TYPES.includes(w.physDmgType)) errors.push(`${L} Ungültiger physDmgType: "${w.physDmgType}"`);
+  const dmgF = ['phys','mag','fire','light','holy'];
+  const scaleF = ['str','dex','int','fai','arc'];
+  const passF = ['bleed','frost','poison','rot','madness','sleep'];
+  for (const f of dmgF) {
+    if (typeof w.baseDamage?.[f] !== 'number') errors.push(`${L} baseDamage.${f} fehlt`);
+    if (typeof w.maxDamage?.[f] !== 'number') errors.push(`${L} maxDamage.${f} fehlt`);
+  }
+  for (const f of scaleF) {
+    if (typeof w.scaling?.[f] !== 'number') errors.push(`${L} scaling.${f} fehlt`);
+    if (typeof w.req?.[f] !== 'number') errors.push(`${L} req.${f} fehlt`);
+  }
+  for (const f of passF) if (typeof w.passive?.[f] !== 'number') errors.push(`${L} passive.${f} fehlt`);
+  if (!Array.isArray(w.supportedAffinities) || w.supportedAffinities.length === 0)
+    errors.push(`${L} supportedAffinities muss ein nicht-leeres Array sein`);
+  return errors;
+};
+const validateAll = (db) => {
+  const allErrors = [];
+  const ids = new Set();
+  for (const w of db) {
+    if (ids.has(w.id)) allErrors.push(`[DUPLIKAT] id "${w.id}"`);
+    ids.add(w.id);
+    allErrors.push(...validateWeapon(w));
+  }
+  return { valid: allErrors.length === 0, count: db.length, errors: allErrors,
+    summary: allErrors.length === 0 ? `✅ Alle ${db.length} Waffen valide` : `❌ ${allErrors.length} Fehler in ${db.length} Waffen` };
+};
+const WEAPON_DB = [
+  createWeapon({ id:'ruins_gs', name:'Trümmergroßschwert', nameEN:'Ruins Greatsword', category:'colossal_sword', isSomber:true, weight:23.0, physDmgType:'Standard', critical:100, baseDamage:{phys:124,mag:37,fire:0,light:0,holy:0}, maxDamage:{phys:303,mag:90,fire:0,light:0,holy:0}, scaling:{str:1.4,dex:0,int:0.45,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:50,dex:0,int:16,fai:0,arc:0}, defaultSkill:'Wave of Destruction', icon:'☄️' }),
+  createWeapon({ id:'grafted_gs', name:'Großschwert der Verpflanzung', nameEN:'Grafted Blade Greatsword', category:'colossal_sword', isSomber:true, weight:21.0, physDmgType:'Standard', critical:100, baseDamage:{phys:162,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:396,mag:0,fire:0,light:0,holy:0}, scaling:{str:0.9,dex:0.45,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:40,dex:14,int:0,fai:0,arc:0}, defaultSkill:'Oath of Vengeance', icon:'🦁' }),
+  createWeapon({ id:'guts_gs', name:'Das Großschwert (Guts)', nameEN:'Greatsword', category:'colossal_sword', isSomber:false, weight:23.0, physDmgType:'Standard', critical:100, baseDamage:{phys:164,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:400,mag:0,fire:0,light:0,holy:0}, scaling:{str:0.8,dex:0.2,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:31,dex:12,int:0,fai:0,arc:0}, defaultSkill:'War Cry', icon:'🗡️' }),
+  createWeapon({ id:'meteoric_gs', name:'Uraltes Meteor-Erzgroßschwert', nameEN:'Meteoric Ore Blade', category:'colossal_sword', isSomber:true, weight:22.0, physDmgType:'Standard', critical:100, baseDamage:{phys:145,mag:45,fire:0,light:0,holy:0}, maxDamage:{phys:340,mag:105,fire:0,light:0,holy:0}, scaling:{str:1.0,dex:0,int:0,fai:0,arc:0.9}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:35,dex:0,int:0,fai:0,arc:19}, defaultSkill:'Gravitas', icon:'⚡' }),
+  createWeapon({ id:'radahn_gs', name:'Großschwert der Sternengeißel', nameEN:'Starscourge Greatsword', category:'colossal_sword', isSomber:true, weight:20.0, physDmgType:'Standard', critical:100, baseDamage:{phys:129,mag:85,fire:0,light:0,holy:0}, maxDamage:{phys:316,mag:200,fire:0,light:0,holy:0}, scaling:{str:0.9,dex:0.3,int:0.4,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:38,dex:12,int:15,fai:0,arc:0}, defaultSkill:'Starcaller Cry', icon:'🌌' }),
+  createWeapon({ id:'godslayer_gs', name:'Großschwert der Gottestöterin', nameEN:"Godslayer's Greatsword", category:'colossal_sword', isSomber:true, weight:17.5, physDmgType:'Standard', critical:100, baseDamage:{phys:119,mag:0,fire:77,light:0,holy:0}, maxDamage:{phys:291,mag:0,fire:188,light:0,holy:0}, scaling:{str:0.3,dex:0.9,int:0,fai:0.7,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:20,dex:22,int:0,fai:20,arc:0}, defaultSkill:"The Queen's Black Flame", icon:'🔥' }),
+  createWeapon({ id:'giant_crusher', name:'Riesenbrecher', nameEN:'Giant-Crusher', category:'colossal_weapon', isSomber:false, weight:26.5, physDmgType:'Strike', critical:100, baseDamage:{phys:155,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:380,mag:0,fire:0,light:0,holy:0}, scaling:{str:1.0,dex:0,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:60,dex:0,int:0,fai:0,arc:0}, defaultSkill:'Endure', icon:'🔨' }),
+  createWeapon({ id:'prelate_crozier', name:'Inferno-Stab des Prälaten', nameEN:"Prelate's Inferno Crozier", category:'colossal_weapon', isSomber:false, weight:23.5, physDmgType:'Strike', critical:100, baseDamage:{phys:156,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:382,mag:0,fire:0,light:0,holy:0}, scaling:{str:0.9,dex:0.2,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:45,dex:8,int:0,fai:0,arc:0}, defaultSkill:"Prelate's Charge", icon:'👹' }),
+  createWeapon({ id:'great_club', name:'Große Keule', nameEN:'Great Club', category:'colossal_weapon', isSomber:false, weight:17.0, physDmgType:'Strike', critical:100, baseDamage:{phys:154,mag:0,fire:0,light:0,holy:46}, maxDamage:{phys:377,mag:0,fire:0,light:0,holy:110}, scaling:{str:0.9,dex:0,int:0,fai:0.4,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:35,dex:0,int:0,fai:0,arc:0}, defaultSkill:'Endure', icon:'🪵' }),
+  createWeapon({ id:'claymore', name:'Claymore', nameEN:'Claymore', category:'greatsword', isSomber:false, weight:9.0, physDmgType:'Standard', critical:100, baseDamage:{phys:138,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:338,mag:0,fire:0,light:0,holy:0}, scaling:{str:0.6,dex:0.6,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:16,dex:13,int:0,fai:0,arc:0}, defaultSkill:"Lion's Claw", icon:'⚔️' }),
+  createWeapon({ id:'blasphemous', name:'Blasphemische Klinge', nameEN:'Blasphemous Blade', category:'greatsword', isSomber:true, weight:13.5, physDmgType:'Standard', critical:100, baseDamage:{phys:121,mag:0,fire:78,light:0,holy:0}, maxDamage:{phys:296,mag:0,fire:191,light:0,holy:0}, scaling:{str:0.4,dex:0.4,int:0,fai:0.9,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:22,dex:15,int:0,fai:21,arc:0}, defaultSkill:"Taker's Flames", icon:'🐍' }),
+  createWeapon({ id:'rivers_blood', name:'Blutige Ströme', nameEN:'Rivers of Blood', category:'katana', isSomber:true, weight:6.5, physDmgType:'Slash', critical:100, baseDamage:{phys:76,mag:0,fire:76,light:0,holy:0}, maxDamage:{phys:186,mag:0,fire:186,light:0,holy:0}, scaling:{str:0.3,dex:0.9,int:0,fai:0,arc:0.9}, passive:{bleed:89,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:12,dex:18,int:0,fai:0,arc:20}, defaultSkill:'Corpse Piler', icon:'🩸' }),
+  createWeapon({ id:'moonveil', name:'Mondschleier', nameEN:'Moonveil', category:'katana', isSomber:true, weight:6.5, physDmgType:'Slash', critical:100, baseDamage:{phys:73,mag:87,fire:0,light:0,holy:0}, maxDamage:{phys:178,mag:213,fire:0,light:0,holy:0}, scaling:{str:0.2,dex:0.8,int:0.9,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:12,dex:18,int:23,fai:0,arc:0}, defaultSkill:'Transient Moonlight', icon:'🌙' }),
+];
+const DB_VALIDATION = validateAll(WEAPON_DB);
+const ARMOR_DB = [
+  { id:'rennala_crown', name:'Königinhalbmond-Krone', slot:'helm', weight:2.2, poise:2, effects:{intFlat:3}, set:'mage' },
+  { id:'haima_crown', name:'Haima-Schimmersteinkrone', slot:'helm', weight:3.5, poise:3, effects:{strFlat:2,intFlat:2}, set:'mage' },
+  { id:'twinsage_crown', name:'Zwillingsweisheits-Krone', slot:'helm', weight:4.9, poise:5, effects:{intFlat:6}, set:'mage' },
+  { id:'omen_mask', name:'Maske des Omenlächelns', slot:'helm', weight:3.0, poise:4, effects:{strFlat:2}, set:'special' },
+  { id:'raptor_chest', name:'Rabenfeder-Rüstung', slot:'chest', weight:7.7, poise:16, effects:{jumpMult:0.10}, set:'special' },
+  { id:'bull_goat_helm', name:'Ziegenbock Helm', slot:'helm', weight:11.3, poise:15, effects:{}, set:'bull_goat' },
+  { id:'bull_goat_chest', name:'Ziegenbock Rüstung', slot:'chest', weight:26.5, poise:47, effects:{}, set:'bull_goat' },
+  { id:'bull_goat_gloves', name:'Ziegenbock Stulpen', slot:'gloves', weight:8.8, poise:10, effects:{}, set:'bull_goat' },
+  { id:'bull_goat_legs', name:'Ziegenbock Beinschutz', slot:'legs', weight:16.4, poise:28, effects:{}, set:'bull_goat' },
+  { id:'veteran_chest', name:'Veteranenrüstung', slot:'chest', weight:18.9, poise:38, effects:{}, set:'veteran' },
+  { id:'veteran_gloves', name:'Veteranenstulpen', slot:'gloves', weight:6.3, poise:8, effects:{}, set:'veteran' },
+  { id:'veteran_legs', name:'Veteranenbeinschutz', slot:'legs', weight:11.7, poise:22, effects:{}, set:'veteran' },
+  { id:'lionel_helm', name:'Lionels Helm', slot:'helm', weight:9.9, poise:14, effects:{}, set:'lionel' },
+  { id:'lionel_chest', name:'Lionels Rüstung', slot:'chest', weight:21.2, poise:37, effects:{}, set:'lionel' },
+  { id:'lionel_gloves', name:'Lionels Stulpen', slot:'gloves', weight:7.1, poise:8, effects:{}, set:'lionel' },
+  { id:'lionel_legs', name:'Lionels Beinschutz', slot:'legs', weight:12.3, poise:22, effects:{}, set:'lionel' },
+  { id:'knight_helm', name:'Ritterhelm', slot:'helm', weight:4.6, poise:7, effects:{}, set:'knight' },
+  { id:'knight_chest', name:'Ritterrüstung', slot:'chest', weight:10.6, poise:21, effects:{}, set:'knight' },
+  { id:'knight_gloves', name:'Ritterstulpen', slot:'gloves', weight:3.5, poise:4, effects:{}, set:'knight' },
+  { id:'knight_legs', name:'Ritterbeinschutz', slot:'legs', weight:6.6, poise:11, effects:{}, set:'knight' },
+  { id:'blaidd_helm', name:'Blaidds Maske', slot:'helm', weight:5.5, poise:8, effects:{}, set:'blaidd' },
+  { id:'blaidd_chest', name:'Blaidds Rüstung', slot:'chest', weight:13.7, poise:28, effects:{}, set:'blaidd' },
+  { id:'blaidd_gloves', name:'Blaidds Stulpen', slot:'gloves', weight:4.6, poise:6, effects:{}, set:'blaidd' },
+  { id:'blaidd_legs', name:'Blaidds Beinschutz', slot:'legs', weight:8.5, poise:17, effects:{}, set:'blaidd' },
+  { id:'black_knife_helm', name:'Kapuze der Schwarzen Messer', slot:'helm', weight:3.8, poise:6, effects:{}, set:'black_knife' },
+  { id:'black_knife_chest', name:'Rüstung der Schwarzen Messer', slot:'chest', weight:9.2, poise:19, effects:{}, set:'black_knife' },
+  { id:'black_knife_gloves', name:'Stulpen der Schwarzen Messer', slot:'gloves', weight:3.1, poise:4, effects:{}, set:'black_knife' },
+  { id:'black_knife_legs', name:'Beinschutz der Schwarzen Messer', slot:'legs', weight:5.7, poise:11, effects:{}, set:'black_knife' },
+  { id:'naked', name:'Keine Ausrüstung', slot:'none', weight:0, poise:0, effects:{}, set:'none' },
+];
+const TALISMAN_DB = [
+  { name:"Scherbe von Alexander", desc:"+15% Talent-Schaden", weight:0.9, effects:{skillMult:0.15} },
+  { name:"Talisman des großen Gefäßes", desc:"+19% max. Last", weight:1.5, effects:{loadMult:0.19} },
+  { name:"Klauentalisman", desc:"+15% Sprungangriff", weight:0.7, effects:{jumpMult:0.15} },
+  { name:"Zweihandschwert-Talisman", desc:"+15% 2H Schaden", weight:1.2, effects:{twoHandMult:0.15} },
+  { name:"Gunst des Erdenbaums +2", desc:"+HP, +Stam, +Load", weight:1.5, effects:{loadMult:0.08,hpMult:0.04,stamMult:0.1} },
+  { name:"Millicents Prothese", desc:"+5 Dex, +Attack", weight:1.6, effects:{dexFlat:5} },
+  { name:"Marikas Narbensiegel", desc:"+3 Int/Fai/Arc/Mind", weight:0.8, effects:{intFlat:3,faiFlat:3,arcFlat:3,mindFlat:3} },
+  { name:"Erbe der Sternenseher", desc:"+5 Int", weight:0.6, effects:{intFlat:5} },
+  { name:"Axt-Talisman", desc:"+10% Charge Atk", weight:0.8, effects:{chargeMult:0.10} },
+  { name:"Godfreys Ikone", desc:"+15% Charge Spell/Skill", weight:0.8, effects:{skillMult:0.15} },
+  { name:"Marikas Wundsiegel", desc:"+5 Int/Fai/Arc/Mind", weight:0.8, effects:{intFlat:5,faiFlat:5,arcFlat:5,mindFlat:5} },
+  { name:"Drachengroßschild-Talisman", desc:"+20% Phys Res", weight:0.8, effects:{} },
+];
+const getActiveMultipliers = (equip) => {
+  const m = { jump:1, skill:1, charge:1, twoHand:1, load:1 };
+  const apply = (item) => {
+    if (!item?.effects) return;
+    if (item.effects.jumpMult)    m.jump    *= 1 + item.effects.jumpMult;
+    if (item.effects.skillMult)   m.skill   *= 1 + item.effects.skillMult;
+    if (item.effects.chargeMult)  m.charge  *= 1 + item.effects.chargeMult;
+    if (item.effects.twoHandMult) m.twoHand *= 1 + item.effects.twoHandMult;
+    if (item.effects.loadMult)    m.load    *= 1 + item.effects.loadMult;
+  };
+  ['helm','chest','gloves','legs'].forEach(s => apply(ARMOR_DB.find(a => a.id === equip[s])));
+  equip.talismans.forEach(t => apply(TALISMAN_DB.find(x => x.name === t)));
+  return m;
+};
+const getEffectiveStats = (base, equip, buffActive) => {
+  let s = { ...base };
+  if (buffActive) { s.vig+=5;s.mind+=5;s.end+=5;s.str+=5;s.dex+=5;s.int+=5;s.fai+=5;s.arc+=5; }
+  const flat = (item) => {
+    if (!item?.effects) return;
+    if (item.effects.strFlat)  s.str  += item.effects.strFlat;
+    if (item.effects.dexFlat)  s.dex  += item.effects.dexFlat;
+    if (item.effects.intFlat)  s.int  += item.effects.intFlat;
+    if (item.effects.faiFlat)  s.fai  += item.effects.faiFlat;
+    if (item.effects.arcFlat)  s.arc  += item.effects.arcFlat;
+    if (item.effects.mindFlat) s.mind += item.effects.mindFlat;
+  };
+  ['helm','chest','gloves','legs'].forEach(sl => flat(ARMOR_DB.find(a => a.id === equip[sl])));
+  equip.talismans.forEach(t => flat(TALISMAN_DB.find(x => x.name === t)));
+  return s;
+};
+const getStatBonus = (v) => {
+  if (v <= 10) return v * 0.5;
+  if (v <= 60) return 10 + (v-10) * 1.5;
+  if (v <= 80) return 85 + (v-60) * 0.5;
+  return 95 + (v-80) * 0.1;
+};
+const interpolateDamage = (base, max, level, isSomber) => {
+  const maxLv = isSomber ? 10 : 25;
+  const effLv = isSomber ? Math.floor(level / 2.5) : level;
+  return Math.floor(base + (max - base) * (effLv / maxLv));
+};
+const calculateAR = (weapon, stats, upgradeLevel, infKey, is2H, mults, previewLayer) => {
+  if (!weapon) return { total:0, phys:0, mag:0, fire:0, holy:0 };
+  const inf = INFUSIONS[infKey] || INFUSIONS.standard;
+  const active = weapon.isSomber ? INFUSIONS.standard : inf;
+  const effStr = is2H ? Math.floor(stats.str * 1.5) : stats.str;
+  const phys  = interpolateDamage(weapon.baseDamage.phys,  weapon.maxDamage.phys,  upgradeLevel, weapon.isSomber) * active.baseMod;
+  const mag   = interpolateDamage(weapon.baseDamage.mag,   weapon.maxDamage.mag,   upgradeLevel, weapon.isSomber);
+  const fire  = interpolateDamage(weapon.baseDamage.fire,  weapon.maxDamage.fire,  upgradeLevel, weapon.isSomber);
+  const holy  = interpolateDamage(weapon.baseDamage.holy,  weapon.maxDamage.holy,  upgradeLevel, weapon.isSomber);
+  const strB = phys * weapon.scaling.str * active.scaleMod.str * (getStatBonus(effStr) / 100);
+  const dexB = phys * weapon.scaling.dex * active.scaleMod.dex * (getStatBonus(stats.dex) / 100);
+  const intB = (mag>0?mag:phys) * weapon.scaling.int * active.scaleMod.int * (getStatBonus(stats.int) / 100);
+  const faiB = (fire>0||holy>0?fire+holy:phys) * weapon.scaling.fai * active.scaleMod.fai * (getStatBonus(stats.fai) / 100);
+  const arcB = (phys+fire) * weapon.scaling.arc * active.scaleMod.arc * (getStatBonus(stats.arc) / 100);
+  let total = phys + mag + fire + holy + strB + dexB + intB + faiB + arcB;
+  if (previewLayer === 'jump')   total *= mults.jump;
+  if (previewLayer === 'skill')  total *= mults.skill;
+  if (previewLayer === 'charge') total *= mults.charge;
+  if (is2H && mults.twoHand > 1) total *= mults.twoHand;
+  return { total:Math.floor(total), phys:Math.floor(phys+strB+dexB+arcB), mag:Math.floor(mag+intB), fire:Math.floor(fire+faiB), holy:Math.floor(holy) };
+};
+const getMissingReqs = (weapon, stats, is2H) => {
+  if (!weapon) return null;
+  const effStr = is2H ? Math.floor(stats.str * 1.5) : stats.str;
+  const m = [];
+  if ((weapon.req.str||0) > effStr)    m.push(`+${weapon.req.str - effStr} Str`);
+  if ((weapon.req.dex||0) > stats.dex) m.push(`+${weapon.req.dex - stats.dex} Dex`);
+  if ((weapon.req.int||0) > stats.int) m.push(`+${weapon.req.int - stats.int} Int`);
+  if ((weapon.req.fai||0) > stats.fai) m.push(`+${weapon.req.fai - stats.fai} Fai`);
+  if ((weapon.req.arc||0) > stats.arc) m.push(`+${weapon.req.arc - stats.arc} Arc`);
+  return m.length > 0 ? m : null;
+};
+const sanitizeLoadData = (data) => ({
+  stats: { ...DEFAULT_STATS, ...(data?.stats || {}) },
+  equip: { ...DEFAULT_EQUIP, ...(data?.equip || {}), talismans: Array.isArray(data?.equip?.talismans) ? data.equip.talismans.slice(0,4) : DEFAULT_EQUIP.talismans },
+  upgrade: typeof data?.upgrade === 'number' ? Math.min(25, Math.max(0, data.upgrade)) : 25,
+});
+const isValidLoadoutData = (d) => !!d && typeof d === 'object' && !!d.stats && typeof d.stats === 'object' && !!d.equip && typeof d.equip === 'object' && Array.isArray(d.equip?.talismans);
+
+const StatInput = ({ label, val, setVal, bonus }) => (
+  <div className="flex justify-between items-center bg-stone-900/50 p-2 rounded border border-stone-800">
+    <span className="text-xs text-stone-400 font-bold w-8">{label.substring(0,3)}</span>
+    <div className="flex items-center gap-2">
+      <button onClick={() => setVal(Math.max(1,val-1))} className="w-8 h-8 bg-stone-800 rounded flex items-center justify-center text-stone-500 hover:text-white">-</button>
+      <span className="font-mono font-bold text-stone-200 w-6 text-center">{val}</span>
+      <button onClick={() => setVal(Math.min(99,val+1))} className="w-8 h-8 bg-stone-800 rounded flex items-center justify-center text-stone-500 hover:text-white">+</button>
+    </div>
+    <span className="text-xs text-green-500 w-6 text-right">{bonus > 0 ? `+${bonus}` : ''}</span>
+  </div>
+);
+
+function EldenBuildManagerV13() {
+  const [stats, setStats] = useState(() => safeGetItem('er_stats', DEFAULT_STATS));
+  const [equip, setEquip] = useState(() => safeGetItem('er_equip', DEFAULT_EQUIP));
+  const [upgrade, setUpgrade] = useState(25);
+  const [isBuffActive, setIsBuffActive] = useState(false);
+  const [previewLayer, setPreviewLayer] = useState(null);
+  const [weaponModal, setWeaponModal] = useState({open:false, slot:'right'});
+  const [armorModal, setArmorModal] = useState({open:false, slot:'helm'});
+  const [talismanModal, setTalismanModal] = useState(false);
+
+  useEffect(() => safeSetItem('er_stats', stats), [stats]);
+  useEffect(() => safeSetItem('er_equip', equip), [equip]);
+
+  const activeStats = useMemo(() => getEffectiveStats(stats, equip, isBuffActive), [stats, equip, isBuffActive]);
+  const multipliers = useMemo(() => getActiveMultipliers(equip), [equip]);
+  const rightW = WEAPON_DB.find(w => w.id === equip.right);
+  const leftW  = WEAPON_DB.find(w => w.id === equip.left);
+  const rightAR = useMemo(() => calculateAR(rightW, activeStats, upgrade, equip.rightInf, equip.right2H, multipliers, previewLayer), [rightW, activeStats, upgrade, equip.rightInf, equip.right2H, multipliers, previewLayer]);
+  const leftAR  = useMemo(() => calculateAR(leftW,  activeStats, upgrade, equip.leftInf,  equip.left2H,  multipliers, previewLayer), [leftW,  activeStats, upgrade, equip.leftInf,  equip.left2H,  multipliers, previewLayer]);
+  const rightReq = getMissingReqs(rightW, activeStats, equip.right2H);
+  const leftReq  = getMissingReqs(leftW,  activeStats, equip.left2H);
+  const armorItems = { helm:ARMOR_DB.find(a=>a.id===equip.helm), chest:ARMOR_DB.find(a=>a.id===equip.chest), gloves:ARMOR_DB.find(a=>a.id===equip.gloves), legs:ARMOR_DB.find(a=>a.id===equip.legs) };
+  const wWeap = (rightW?.weight||0) + (leftW?.weight||0);
+  const wArmor = Object.values(armorItems).reduce((acc,a) => acc + (a?.weight||0), 0);
+  const wTal = equip.talismans.reduce((acc,t) => acc + (TALISMAN_DB.find(x=>x.name===t)?.weight||0), 0);
+  const currentLoad = wWeap + wArmor + wTal;
+  const maxLoad = (45 + activeStats.end * 1.6) * multipliers.load;
+  const ratio = (currentLoad / maxLoad) * 100;
+  const rollType = ratio < 30 ? 'Light' : ratio < 70 ? 'Mid' : 'HEAVY';
+  const rollColor = ratio < 30 ? 'text-green-400' : ratio < 70 ? 'text-amber-400' : 'text-red-500 font-black animate-pulse';
+  const totalPoise = Object.values(armorItems).reduce((acc,a) => acc + (a?.poise||0), 0);
+
+  return (
+    <div className="w-full min-h-screen bg-stone-950 text-stone-200 font-sans pb-10">
+      <div className="sticky top-0 bg-stone-900/95 backdrop-blur border-b border-stone-800 p-3 flex justify-between items-center shadow-lg z-50">
+        <div className="flex items-center gap-2">
+          <Crown className="text-amber-600 w-5 h-5"/>
+          <h1 className="font-bold text-lg tracking-wide">ELDEN <span className="text-amber-600">MASTER</span> <span className="text-xs text-stone-600 bg-stone-950 px-1 rounded border border-stone-800">v13</span></h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs px-2 py-1 rounded border ${DB_VALIDATION.valid ? 'border-green-900/50 text-green-500' : 'border-red-900/50 text-red-400'}`}>
+            DB {DB_VALIDATION.valid ? 'OK' : 'ERR'}
+          </span>
+          <button onClick={() => { if(!confirm('Reset?')) return; setStats(DEFAULT_STATS); setEquip(DEFAULT_EQUIP); setUpgrade(25); }} className="p-2 text-stone-600 hover:text-red-500"><RotateCcw className="w-4 h-4"/></button>
+        </div>
+      </div>
+      <div className="p-4 max-w-5xl mx-auto space-y-4">
+        <div className="bg-gradient-to-br from-stone-900 to-black border border-stone-800 rounded-xl p-4 shadow-xl">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-stone-500 text-xs font-bold uppercase mb-1">Load Status</h2>
+              <div className={`text-3xl font-black ${rollColor}`}>{rollType} ROLL</div>
+              <div className="text-stone-400 font-mono text-sm">{currentLoad.toFixed(1)} / {maxLoad.toFixed(1)}</div>
+            </div>
+            <div className="text-right">
+              <h2 className="text-stone-500 text-xs font-bold uppercase mb-1">Poise</h2>
+              <div className={`text-2xl font-bold ${totalPoise>=51?'text-green-500':'text-amber-500'}`}>{totalPoise}</div>
+            </div>
+          </div>
+          <div className="w-full bg-stone-800 rounded-full h-2 mt-3 overflow-hidden">
+            <div className={`h-full transition-all ${ratio<70?'bg-amber-500':'bg-red-600'}`} style={{width:`${Math.min(ratio,100)}%`}}/>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {[{k:'jump',l:'Jump',i:'🐇'},{k:'skill',l:'Skill',i:'⚔️'},{k:'charge',l:'Charge',i:'🔋'}].map(m => (
+            <button key={m.k} onClick={()=>setPreviewLayer(previewLayer===m.k?null:m.k)}
+              className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm border flex items-center justify-center gap-2 transition-all ${previewLayer===m.k?'bg-amber-900/40 border-amber-500 text-amber-400':'bg-stone-900 border-stone-800 text-stone-500 hover:border-stone-600'}`}>
+              {m.i} {m.l}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            {side:'right',w:rightW,ar:rightAR,req:rightReq,label:'Rechts',infKey:'rightInf',h2Key:'right2H'},
+            {side:'left', w:leftW, ar:leftAR, req:leftReq, label:'Links', infKey:'leftInf', h2Key:'left2H'},
+          ].map(({side,w,ar,req,label,infKey,h2Key}) => (
+            <div key={side} className="bg-stone-900 border border-stone-800 p-3 rounded-xl">
+              <div className="flex justify-between mb-2">
+                <span className="text-xs font-bold text-stone-500 uppercase">{label}</span>
+                <button onClick={()=>setEquip({...equip,[h2Key]:!equip[h2Key]})}
+                  className={`text-xs px-2 py-0.5 rounded border ${equip[h2Key]?'bg-amber-900/40 border-amber-500 text-amber-500':'bg-stone-800 border-stone-700 text-stone-600'}`}>
+                  {equip[h2Key]?'2H':'1H'}
+                </button>
+              </div>
+              <div className="text-right mb-2">
+                <div className={`text-2xl font-bold ${previewLayer?'text-amber-400 animate-pulse':'text-stone-200'}`}>{ar.total} AR</div>
+                {req && <button onClick={()=>alert(`Dir fehlen:\n${req.join('\n')}`)} className="text-red-400 text-xs flex items-center justify-end gap-1 hover:underline"><AlertCircle className="w-3 h-3"/> Anforderungen</button>}
+              </div>
+              <button onClick={()=>setWeaponModal({open:true,slot:side})} className="w-full bg-stone-950 p-3 rounded border border-stone-800 text-left font-bold mb-2 flex justify-between items-center hover:border-amber-600 transition-colors">
+                <div>
+                  <div>{w?w.name:'— Leer —'}</div>
+                  {w&&<div className="text-xs text-stone-500 font-normal">{w.physDmgType} • {w.defaultSkill}</div>}
+                </div>
+                <Search className="w-4 h-4 text-stone-600 shrink-0"/>
+              </button>
+              {w && !w.isSomber && (
+                <select className="w-full bg-stone-950 text-xs p-2 rounded border border-stone-800 text-stone-400"
+                  value={equip[infKey]} onChange={e=>setEquip({...equip,[infKey]:e.target.value})}>
+                  {Object.entries(INFUSIONS).filter(([k])=>w.supportedAffinities.includes(k)).map(([k,v])=><option key={k} value={k}>{v.name}</option>)}
+                </select>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="bg-stone-900 border border-stone-800 rounded-xl p-4">
+          <h3 className="text-stone-300 font-bold mb-4 flex gap-2"><User className="w-5 h-5 text-amber-600"/> Attribute</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {[{label:'Vigor',key:'vig'},{label:'Endur',key:'end'},{label:'Str',key:'str'},{label:'Dex',key:'dex'},{label:'Int',key:'int'},{label:'Faith',key:'fai'},{label:'Arc',key:'arc'}].map(({label,key})=>(
+              <StatInput key={key} label={label} val={stats[key]} setVal={v=>setStats({...stats,[key]:v})} bonus={activeStats[key]-stats[key]}/>
+            ))}
+          </div>
+          <div className="space-y-3">
+            <button onClick={()=>setIsBuffActive(!isBuffActive)}
+              className={`w-full py-3 rounded font-bold flex justify-center items-center gap-2 border transition-all ${isBuffActive?'bg-amber-900/30 border-amber-500 text-amber-500':'bg-stone-800 border-stone-700 text-stone-500'}`}>
+              <Zap className="w-4 h-4"/> {isBuffActive?'Buff ON (+5)':'Buff aktivieren'}
+            </button>
+            <div className="bg-stone-950 p-3 rounded border border-stone-800">
+              <div className="flex justify-between text-xs font-bold text-stone-500 mb-2">
+                <span>UPGRADE</span><span className="text-amber-500">+{upgrade}</span>
+              </div>
+              <input type="range" min="0" max="25" value={upgrade} onChange={e=>setUpgrade(Number(e.target.value))} className="w-full h-8 bg-stone-800 rounded-lg accent-amber-600 cursor-pointer"/>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4">
+            <h3 className="text-stone-300 font-bold mb-4 flex gap-2"><Shirt className="w-5 h-5 text-stone-500"/> Rüstung</h3>
+            <div className="grid grid-cols-1 gap-2">
+              {['helm','chest','gloves','legs'].map(slot=>{
+                const item = armorItems[slot];
+                return (
+                  <button key={slot} onClick={()=>setArmorModal({open:true,slot})} className="flex justify-between items-center bg-stone-950 p-3 rounded border border-stone-800 hover:border-amber-600 transition-colors">
+                    <span className="text-xs font-bold text-stone-500 uppercase w-20">{ARMOR_SLOTS[slot]}</span>
+                    <span className="flex-1 text-left px-2 text-stone-300 text-sm truncate">{item?item.name:'Leer'}</span>
+                    <Search className="w-4 h-4 text-stone-600"/>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="bg-stone-900 border border-stone-800 rounded-xl p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-stone-300 font-bold flex gap-2"><Zap className="w-5 h-5 text-stone-500"/> Talismane</h3>
+              <button onClick={()=>setTalismanModal(true)} className="text-xs bg-stone-800 px-2 py-1 rounded border border-stone-700 hover:text-white">Bearbeiten</button>
+            </div>
+            <div className="space-y-2">
+              {equip.talismans.length===0 && <div className="text-stone-600 text-xs text-center py-4">Keine Talismane.</div>}
+              {equip.talismans.map((tName,i)=>{
+                const t = TALISMAN_DB.find(x=>x.name===tName);
+                return (
+                  <div key={i} className="bg-stone-950 p-2 rounded border border-stone-800 flex justify-between items-center">
+                    <span className="text-sm text-stone-300">{tName}</span>
+                    {t?.desc && <span className="text-[10px] text-stone-500 max-w-[120px] text-right">{t.desc}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+      {weaponModal.open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-stone-900 w-full max-w-3xl rounded-xl border border-stone-700 shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-stone-800 flex justify-between items-center bg-stone-950 rounded-t-xl shrink-0">
+              <h3 className="text-lg font-bold text-amber-500">Waffe auswählen</h3>
+              <button onClick={()=>setWeaponModal({...weaponModal,open:false})}><X className="text-stone-500 hover:text-white"/></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-2">
+              {WEAPON_DB.map(w => (
+                <button key={w.id} onClick={()=>{setEquip({...equip,[weaponModal.slot]:w.id});setWeaponModal({...weaponModal,open:false});}}
+                  className="w-full bg-stone-800/50 hover:bg-stone-800 border border-stone-700 hover:border-amber-600 p-3 rounded-lg flex items-center gap-3">
+                  <div className="text-2xl w-10 h-10 bg-stone-900 flex items-center justify-center rounded border border-stone-800">{w.icon}</div>
+                  <div className="text-left">
+                    <div className="font-bold text-stone-200">{w.name}</div>
+                    <div className="text-xs text-stone-500">{WEAPON_CATEGORIES[w.category]} • {w.isSomber?'Somber':'Standard'}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {armorModal.open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-stone-900 w-full max-w-2xl rounded-xl border border-stone-700 shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-stone-800 flex justify-between items-center bg-stone-950 rounded-t-xl shrink-0">
+              <h3 className="text-lg font-bold text-amber-500">{ARMOR_SLOTS[armorModal.slot]}</h3>
+              <button onClick={()=>setArmorModal({...armorModal,open:false})}><X className="text-stone-500 hover:text-white"/></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-2">
+              {ARMOR_DB.filter(a=>a.slot===armorModal.slot||a.id==='naked').map(item=>(
+                <button key={item.id} onClick={()=>{setEquip({...equip,[armorModal.slot]:item.id});setArmorModal({...armorModal,open:false});}}
+                  className="w-full bg-stone-800/40 hover:bg-stone-800 border border-stone-700/50 hover:border-amber-600 rounded-lg p-3 text-left flex justify-between items-center">
+                  <span className="font-bold text-stone-200">{item.name}</span>
+                  <div className="flex gap-4 text-xs text-stone-500">
+                    <span>{item.weight.toFixed(1)}kg</span>
+                    <span>Poise: {item.poise}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {talismanModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-stone-900 w-full max-w-2xl rounded-xl border border-stone-700 shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="p-4 border-b border-stone-800 flex justify-between items-center bg-stone-950 rounded-t-xl shrink-0">
+              <h3 className="text-lg font-bold text-amber-500">Talismane ({equip.talismans.length}/4)</h3>
+              <button onClick={()=>setTalismanModal(false)}><X className="text-stone-500 hover:text-white"/></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {TALISMAN_DB.map(t => {
+                const active = equip.talismans.includes(t.name);
+                const full = equip.talismans.length >= 4 && !active;
+                return (
+                  <button key={t.name} onClick={()=>{
+                    if(full) return;
+                    let ts = [...equip.talismans];
+                    active ? ts = ts.filter(x=>x!==t.name) : ts.push(t.name);
+                    setEquip({...equip,talismans:ts});
+                  }} className={`w-full p-3 rounded-lg border text-left flex justify-between items-center transition-all ${active?'bg-amber-900/20 border-amber-600':'bg-stone-800/40 border-stone-700/50 hover:bg-stone-800'} ${full?'opacity-50 cursor-not-allowed':''}`}>
+                    <div>
+                      <div className={`font-bold ${active?'text-amber-400':'text-stone-300'}`}>{t.name}</div>
+                      <div className="text-xs text-stone-500">{t.desc}</div>
+                    </div>
+                    {active && <Zap className="w-4 h-4 text-amber-500 fill-current"/>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+"""
+
+path = f"{BASE}/docs/build-manager/index.html"
+with open(path, "r", encoding="utf-8") as f:
+    content = f.read()
+
+content = content.replace("// BUILD_MANAGER_CODE_HERE", JSX.strip())
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+print("✅ Build Manager JSX eingebaut")
+print(f"   Dateigröße: {os.path.getsize(path) / 1024:.1f} KB")
