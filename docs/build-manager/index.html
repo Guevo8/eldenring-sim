@@ -396,9 +396,16 @@ function EldenBuildManagerV13() {
             </button>
             <div className="bg-stone-950 p-3 rounded border border-stone-800">
               <div className="flex justify-between text-xs font-bold text-stone-500 mb-2">
-                <span>UPGRADE</span><span className="text-amber-500">+{upgrade}</span>
+                <span>UPGRADE</span><span className="text-amber-500">+{upgrade} {(rightW?.isSomber || leftW?.isSomber) ? "(max +10)" : "(max +25)"}</span>
               </div>
-              <input type="range" min="0" max="25" value={upgrade} onChange={e=>setUpgrade(Number(e.target.value))} className="w-full h-8 bg-stone-800 rounded-lg accent-amber-600 cursor-pointer"/>
+              {(() => {
+                const maxUpg = rightW?.isSomber || leftW?.isSomber ? 10 : 25;
+                return (
+                  <input type="range" min="0" max={maxUpg} value={Math.min(upgrade, maxUpg)}
+                    onChange={e=>setUpgrade(Number(e.target.value))}
+                    className="w-full h-8 bg-stone-800 rounded-lg accent-amber-600 cursor-pointer"/>
+                );
+              })()}
             </div>
           </div>
         </div>
