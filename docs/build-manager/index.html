@@ -12,6 +12,10 @@
 </head>
 <body>
   <div id="root"></div>
+  <div id="error-screen" style="display:none;padding:24px;background:#1a0000;color:#ff6b6b;font-family:monospace;min-height:100vh;">
+    <h2 style="color:#ff4444;margin-bottom:16px;">⚠️ App Fehler</h2>
+    <pre id="error-text" style="white-space:pre-wrap;font-size:13px;line-height:1.6;"></pre>
+  </div>
   <script type="text/babel" data-presets="react">
     const { useState, useMemo, useEffect } = React;
     const mkIcon = (emoji) => () => React.createElement('span', null, emoji);
@@ -523,7 +527,21 @@ function EldenBuildManagerV13() {
     </div>
   );
 }
-    ReactDOM.createRoot(document.getElementById('root')).render(<EldenBuildManagerV13 />);
+    window.addEventListener('error', (e) => {
+      document.getElementById('root').style.display = 'none';
+      const err = document.getElementById('error-screen');
+      document.getElementById('error-text').textContent = e.message + '\n\n' + (e.filename||'') + ':' + (e.lineno||'');
+      err.style.display = 'block';
+    });
+    try {
+      const rootEl = document.getElementById('root');
+      if (!rootEl) throw new Error('Root element nicht gefunden');
+      ReactDOM.createRoot(rootEl).render(<EldenBuildManagerV13 />);
+    } catch(e) {
+      document.getElementById('root').style.display = 'none';
+      document.getElementById('error-screen').style.display = 'block';
+      document.getElementById('error-text').textContent = 'Boot-Fehler: ' + e.message;
+    }
   </script>
 </body>
 </html>
