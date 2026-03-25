@@ -137,22 +137,7 @@ const validateAll = (db) => {
   return { valid: allErrors.length === 0, count: db.length, errors: allErrors,
     summary: allErrors.length === 0 ? `✅ Alle ${db.length} Waffen valide` : `❌ ${allErrors.length} Fehler in ${db.length} Waffen` };
 };
-const WEAPON_DB = [
-  createWeapon({ id:'ruins_gs', name:'Trümmergroßschwert', nameEN:'Ruins Greatsword', category:'colossal_sword', isSomber:true, weight:23.0, physDmgType:'Standard', critical:100, baseDamage:{phys:124,mag:37,fire:0,light:0,holy:0}, maxDamage:{phys:303,mag:90,fire:0,light:0,holy:0}, scaling:{str:1.4,dex:0,int:0.45,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:50,dex:0,int:16,fai:0,arc:0}, defaultSkill:'Wave of Destruction', icon:'☄️' }),
-  createWeapon({ id:'grafted_gs', name:'Großschwert der Verpflanzung', nameEN:'Grafted Blade Greatsword', category:'colossal_sword', isSomber:true, weight:21.0, physDmgType:'Standard', critical:100, baseDamage:{phys:162,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:396,mag:0,fire:0,light:0,holy:0}, scaling:{str:0.9,dex:0.45,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:40,dex:14,int:0,fai:0,arc:0}, defaultSkill:'Oath of Vengeance', icon:'🦁' }),
-  createWeapon({ id:'guts_gs', name:'Das Großschwert (Guts)', nameEN:'Greatsword', category:'colossal_sword', isSomber:false, weight:23.0, physDmgType:'Standard', critical:100, baseDamage:{phys:164,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:400,mag:0,fire:0,light:0,holy:0}, scaling:{str:0.8,dex:0.2,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:31,dex:12,int:0,fai:0,arc:0}, defaultSkill:'War Cry', icon:'🗡️' }),
-  createWeapon({ id:'meteoric_gs', name:'Uraltes Meteor-Erzgroßschwert', nameEN:'Meteoric Ore Blade', category:'colossal_sword', isSomber:true, weight:22.0, physDmgType:'Standard', critical:100, baseDamage:{phys:145,mag:45,fire:0,light:0,holy:0}, maxDamage:{phys:340,mag:105,fire:0,light:0,holy:0}, scaling:{str:1.0,dex:0,int:0,fai:0,arc:0.9}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:35,dex:0,int:0,fai:0,arc:19}, defaultSkill:'Gravitas', icon:'⚡' }),
-  createWeapon({ id:'radahn_gs', name:'Großschwert der Sternengeißel', nameEN:'Starscourge Greatsword', category:'colossal_sword', isSomber:true, weight:20.0, physDmgType:'Standard', critical:100, baseDamage:{phys:129,mag:85,fire:0,light:0,holy:0}, maxDamage:{phys:316,mag:200,fire:0,light:0,holy:0}, scaling:{str:0.9,dex:0.3,int:0.4,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:38,dex:12,int:15,fai:0,arc:0}, defaultSkill:'Starcaller Cry', icon:'🌌' }),
-  createWeapon({ id:'godslayer_gs', name:'Großschwert der Gottestöterin', nameEN:"Godslayer's Greatsword", category:'colossal_sword', isSomber:true, weight:17.5, physDmgType:'Standard', critical:100, baseDamage:{phys:119,mag:0,fire:77,light:0,holy:0}, maxDamage:{phys:291,mag:0,fire:188,light:0,holy:0}, scaling:{str:0.3,dex:0.9,int:0,fai:0.7,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:20,dex:22,int:0,fai:20,arc:0}, defaultSkill:"The Queen's Black Flame", icon:'🔥' }),
-  createWeapon({ id:'giant_crusher', name:'Riesenbrecher', nameEN:'Giant-Crusher', category:'colossal_weapon', isSomber:false, weight:26.5, physDmgType:'Strike', critical:100, baseDamage:{phys:155,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:380,mag:0,fire:0,light:0,holy:0}, scaling:{str:1.0,dex:0,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:60,dex:0,int:0,fai:0,arc:0}, defaultSkill:'Endure', icon:'🔨' }),
-  createWeapon({ id:'prelate_crozier', name:'Inferno-Stab des Prälaten', nameEN:"Prelate's Inferno Crozier", category:'colossal_weapon', isSomber:false, weight:23.5, physDmgType:'Strike', critical:100, baseDamage:{phys:156,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:382,mag:0,fire:0,light:0,holy:0}, scaling:{str:0.9,dex:0.2,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:45,dex:8,int:0,fai:0,arc:0}, defaultSkill:"Prelate's Charge", icon:'👹' }),
-  createWeapon({ id:'great_club', name:'Große Keule', nameEN:'Great Club', category:'colossal_weapon', isSomber:false, weight:17.0, physDmgType:'Strike', critical:100, baseDamage:{phys:154,mag:0,fire:0,light:0,holy:46}, maxDamage:{phys:377,mag:0,fire:0,light:0,holy:110}, scaling:{str:0.9,dex:0,int:0,fai:0.4,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:35,dex:0,int:0,fai:0,arc:0}, defaultSkill:'Endure', icon:'🪵' }),
-  createWeapon({ id:'claymore', name:'Claymore', nameEN:'Claymore', category:'greatsword', isSomber:false, weight:9.0, physDmgType:'Standard', critical:100, baseDamage:{phys:138,mag:0,fire:0,light:0,holy:0}, maxDamage:{phys:338,mag:0,fire:0,light:0,holy:0}, scaling:{str:0.6,dex:0.6,int:0,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:16,dex:13,int:0,fai:0,arc:0}, defaultSkill:"Lion's Claw", icon:'⚔️' }),
-  createWeapon({ id:'blasphemous', name:'Blasphemische Klinge', nameEN:'Blasphemous Blade', category:'greatsword', isSomber:true, weight:13.5, physDmgType:'Standard', critical:100, baseDamage:{phys:121,mag:0,fire:78,light:0,holy:0}, maxDamage:{phys:296,mag:0,fire:191,light:0,holy:0}, scaling:{str:0.4,dex:0.4,int:0,fai:0.9,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:22,dex:15,int:0,fai:21,arc:0}, defaultSkill:"Taker's Flames", icon:'🐍' }),
-  createWeapon({ id:'rivers_blood', name:'Blutige Ströme', nameEN:'Rivers of Blood', category:'katana', isSomber:true, weight:6.5, physDmgType:'Slash', critical:100, baseDamage:{phys:76,mag:0,fire:76,light:0,holy:0}, maxDamage:{phys:186,mag:0,fire:186,light:0,holy:0}, scaling:{str:0.3,dex:0.9,int:0,fai:0,arc:0.9}, passive:{bleed:89,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:12,dex:18,int:0,fai:0,arc:20}, defaultSkill:'Corpse Piler', icon:'🩸' }),
-  createWeapon({ id:'moonveil', name:'Mondschleier', nameEN:'Moonveil', category:'katana', isSomber:true, weight:6.5, physDmgType:'Slash', critical:100, baseDamage:{phys:73,mag:87,fire:0,light:0,holy:0}, maxDamage:{phys:178,mag:213,fire:0,light:0,holy:0}, scaling:{str:0.2,dex:0.8,int:0.9,fai:0,arc:0}, passive:{bleed:0,frost:0,poison:0,rot:0,madness:0,sleep:0}, req:{str:12,dex:18,int:23,fai:0,arc:0}, defaultSkill:'Transient Moonlight', icon:'🌙' }),
-];
-const DB_VALIDATION = validateAll(WEAPON_DB);
+let WEAPON_DB = []; let DB_VALIDATION = { valid: true, count: 0, errors: [], summary: 'Lade...' };
 const ARMOR_DB = [
   { id:'rennala_crown', name:'Königinhalbmond-Krone', slot:'helm', weight:2.2, poise:2, effects:{intFlat:3}, set:'mage' },
   { id:'haima_crown', name:'Haima-Schimmersteinkrone', slot:'helm', weight:3.5, poise:3, effects:{strFlat:2,intFlat:2}, set:'mage' },
@@ -533,15 +518,43 @@ function EldenBuildManagerV13() {
       document.getElementById('error-text').textContent = e.message + '\n\n' + (e.filename||'') + ':' + (e.lineno||'');
       err.style.display = 'block';
     });
-    try {
-      const rootEl = document.getElementById('root');
-      if (!rootEl) throw new Error('Root element nicht gefunden');
-      ReactDOM.createRoot(rootEl).render(<EldenBuildManagerV13 />);
-    } catch(e) {
-      document.getElementById('root').style.display = 'none';
-      document.getElementById('error-screen').style.display = 'block';
-      document.getElementById('error-text').textContent = 'Boot-Fehler: ' + e.message;
+
+    // Waffen aus JSON laden, dann App starten
+    async function bootApp() {
+      try {
+        const rootEl = document.getElementById('root');
+        if (!rootEl) throw new Error('Root element nicht gefunden');
+
+        // Lade-Screen anzeigen
+        rootEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#060606;color:#d4af37;font-family:Georgia,serif;font-size:1.2rem;">⚔️ Lade Waffendaten...</div>';
+
+        // JSON fetchen
+        const res = await fetch('../data/weapons_full.json');
+        if (!res.ok) throw new Error('Waffendaten konnten nicht geladen werden (HTTP ' + res.status + ')');
+        const json = await res.json();
+
+        // Globale WEAPON_DB befüllen
+        WEAPON_DB = json.weapons.map(w => createWeapon(w));
+        DB_VALIDATION = validateAll(WEAPON_DB);
+
+        if (!DB_VALIDATION.valid) {
+          console.warn('⚠️ DB Validierungsfehler:', DB_VALIDATION.errors);
+        } else {
+          console.log('%c' + DB_VALIDATION.summary, 'color:#22c55e;font-weight:bold');
+        }
+
+        // App rendern
+        rootEl.innerHTML = '';
+        ReactDOM.createRoot(rootEl).render(<EldenBuildManagerV13 />);
+
+      } catch(e) {
+        document.getElementById('root').style.display = 'none';
+        document.getElementById('error-screen').style.display = 'block';
+        document.getElementById('error-text').textContent = 'Boot-Fehler: ' + e.message;
+      }
     }
+
+    bootApp();
   </script>
 </body>
 </html>
