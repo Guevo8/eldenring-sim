@@ -8,16 +8,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.383.0/lucide.min.js"></script>
   <style>*{box-sizing:border-box;margin:0;padding:0}</style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel" data-presets="react">
     const { useState, useMemo, useEffect } = React;
-    const { Scale, Zap, Crown, RotateCcw, Search, X, Shirt, User, Menu, Save,
-            Download, Upload, Copy, AlertCircle, Layers, ArrowRightLeft,
-            Shield, CheckCircle, ChevronDown, ChevronUp, Database } = lucide;
+    const mkIcon = (emoji) => () => React.createElement('span', null, emoji);
+    const Scale=mkIcon('⚖️'), Zap=mkIcon('⚡'), Crown=mkIcon('👑');
+    const RotateCcw=mkIcon('↩️'), Search=mkIcon('🔍'), X=mkIcon('✕');
+    const Shirt=mkIcon('👕'), User=mkIcon('👤'), Menu=mkIcon('☰');
+    const Save=mkIcon('💾'), Download=mkIcon('⬇️'), Upload=mkIcon('⬆️');
+    const Copy=mkIcon('📋'), AlertCircle=mkIcon('⚠️'), Layers=mkIcon('📚');
+    const ArrowRightLeft=mkIcon('⇄'), Shield=mkIcon('🛡️');
+    const CheckCircle=mkIcon('✅'), ChevronDown=mkIcon('▼');
+    const ChevronUp=mkIcon('▲'), Database=mkIcon('🗄️');
     const DEFAULT_STATS = { lvl: 107, vig: 40, mind: 15, end: 35, str: 57, dex: 14, int: 10, fai: 9, arc: 7 };
 const DEFAULT_EQUIP = {
   right: 'ruins_gs', rightInf: 'standard', right2H: false,
