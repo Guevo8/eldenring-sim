@@ -342,7 +342,7 @@ function EldenBuildManagerV13() {
           </div>
         </div>
         <div className="flex gap-2">
-          {[{k:'jump',l:'Jump',i:'🐇'},{k:'skill',l:'Skill',i:'⚔️'},{k:'charge',l:'Charge',i:'🔋'}].map(m => (
+          {[{k:'jump',l:'Jump',i:'🐇'},{k:'charge',l:'Charge',i:'🔋'}].map(m => (
             <button key={m.k} onClick={()=>setPreviewLayer(previewLayer===m.k?null:m.k)}
               className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm border flex items-center justify-center gap-2 transition-all ${previewLayer===m.k?'bg-amber-900/40 border-amber-500 text-amber-400':'bg-stone-900 border-stone-800 text-stone-500 hover:border-stone-600'}`}>
               {m.i} {m.l}
@@ -359,7 +359,7 @@ function EldenBuildManagerV13() {
                 <span className="text-xs font-bold text-stone-500 uppercase">{label}</span>
                 <button onClick={()=>setEquip({...equip,[h2Key]:!equip[h2Key]})}
                   className={`text-xs px-2 py-0.5 rounded border ${equip[h2Key]?'bg-amber-900/40 border-amber-500 text-amber-500':'bg-stone-800 border-stone-700 text-stone-600'}`}>
-                  {equip[h2Key]?'2H':'1H'}
+                  {equip[h2Key] ? `2H (STR ${Math.floor(activeStats.str * 1.5)})` : '1H'}
                 </button>
               </div>
               <div className="text-right mb-2">
